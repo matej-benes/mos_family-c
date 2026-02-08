@@ -6,10 +6,6 @@
       "type": "object",
       "description": "Represents a user within the MikyOS Family Connect application.",
       "properties": {
-        "username": {
-          "type": "string",
-          "description": "The user's username for logging in."
-        },
         "pin": {
           "type": "string",
           "description": "The user's PIN for logging in. Consider hashing this value for security."
@@ -20,7 +16,7 @@
         },
         "deviceId": {
           "type": "string",
-          "description": "The ID of the device the user is associated with. (Relationship: User 1:1 Device)"
+          "description": "The unique ID of the device the user is associated with. (Relationship: User 1:1 Device)"
         },
         "name": {
             "type": "string",
@@ -40,10 +36,10 @@
         }
       },
       "required": [
-        "username",
         "pin",
         "role",
-        "name"
+        "name",
+        "deviceId"
       ]
     },
     "Device": {
@@ -129,7 +125,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user information, including username, PIN (consider hashing!), role, and associated deviceId.",
+          "description": "Stores user information, including PIN (consider hashing!), role, and associated deviceId.",
           "params": [
             {
               "name": "userId",

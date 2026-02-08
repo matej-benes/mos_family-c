@@ -19,12 +19,13 @@ const servers = {
 
 interface MikyosContextType {
   currentUser: User | null;
+  deviceUser: User | null;
   users: User[];
   gameState: GameState;
   activeApp: ActiveApp;
   isLocked: boolean;
   lockMessage: string;
-  login: (username: string, pin: string) => void;
+  login: (pin: string) => void;
   logout: () => void;
   setActiveApp: (app: ActiveApp) => void;
   toggleGameMode: () => void;
@@ -43,6 +44,8 @@ export const MikyosContext = createContext<MikyosContextType | undefined>(undefi
 
 export function MikyosProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [deviceUser, setDeviceUser] = useState<User | null>(null);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
   const [activeApp, setActiveApp] = useState<ActiveApp>(null);
   const [isLocked, setIsLocked] = useState<boolean>(true);
   const [lockMessage, setLockMessage] = useState<string>('');
@@ -65,6 +68,31 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
 
   const users = useMemo(() => usersData || [], [usersData]);
   const gameState = useMemo(() => gameStateData?.mode || 'nehraje_se', [gameStateData]);
+
+  useEffect(() => {
+    const getOrSetDeviceId = (): string => {
+      let id = localStorage.getItem('mikyos-deviceId');
+      if (!id) {
+          // A simple UUID generator
+          id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+              var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+              return v.toString(16);
+          });
+          localStorage.setItem('mikyos-deviceId', id);
+      }
+      return id;
+    };
+    setDeviceId(getOrSetDeviceId());
+  }, []);
+
+  useEffect(() => {
+    if (deviceId && users.length > 0) {
+      const userForDevice = users.find(u => u.deviceId === deviceId);
+      setDeviceUser(userForDevice || null);
+    } else {
+      setDeviceUser(null);
+    }
+  }, [deviceId, users]);
   
   // Listen for incoming calls
   useEffect(() => {
@@ -329,14 +357,15 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   }, [users, currentUser]);
 
 
-  const login = (username: string, pin: string) => {
-    const userToLogin = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.pin === pin);
-    if (userToLogin) {
-      setCurrentUser(userToLogin);
+  const login = (pin: string) => {
+    if (deviceUser && deviceUser.pin === pin) {
+      setCurrentUser(deviceUser);
       setActiveApp(null);
-      toast({ title: `Vítej, ${userToLogin.name}!`, description: "Jsi přihlášen." });
+      toast({ title: `Vítej, ${deviceUser.name}!`, description: "Jsi přihlášen." });
+    } else if (!deviceUser) {
+        toast({ variant: 'destructive', title: "Přihlášení selhalo", description: "Toto zařízení není přiřazeno žádnému uživateli." });
     } else {
-        toast({ variant: 'destructive', title: "Přihlášení selhalo", description: "Neplatné uživatelské jméno nebo PIN." });
+        toast({ variant: 'destructive', title: "Přihlášení selhalo", description: "Neplatný PIN." });
     }
   };
 
@@ -368,6 +397,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   const value = {
     currentUser,
     users,
+    deviceUser,
     gameState,
     activeApp,
     isLocked,

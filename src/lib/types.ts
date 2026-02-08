@@ -3,9 +3,9 @@ export type UserRole = "superadmin" | "starší" | "mladší";
 export type User = {
   id: string;
   name: string;
-  username: string;
   pin: string;
   role: UserRole;
+  deviceId: string;
   bedtime?: string; // HH:mm format
   avatarUrl: string;
   dataAiHint: string;
