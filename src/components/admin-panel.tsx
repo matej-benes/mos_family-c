@@ -7,20 +7,29 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Gamepad2, Users, Moon, ShieldCheck, PlusCircle, X } from 'lucide-react';
+import { Gamepad2, Users, Moon, ShieldCheck, PlusCircle, X, Wallpaper } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from './ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Badge } from './ui/badge';
 import type { User } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 export function AdminPanel() {
-  const { currentUser, users, gameState, toggleGameMode, setBedtime, updateUserApprovals } = useMikyos();
+  const { currentUser, users, gameState, toggleGameMode, setBedtime, updateUserApprovals, wallpaperUrl, setWallpaper } = useMikyos();
   const [newApprovalItems, setNewApprovalItems] = useState<{[key: string]: string}>({});
   const [selectedContacts, setSelectedContacts] = useState<{[key: string]: string}>({});
+  const [wallpaperInput, setWallpaperInput] = useState('');
+
+  useEffect(() => {
+    if (wallpaperUrl) {
+      setWallpaperInput(wallpaperUrl);
+    } else {
+      setWallpaperInput('');
+    }
+  }, [wallpaperUrl]);
 
   if (!currentUser || !['superadmin', 'starší'].includes(currentUser.role)) {
     return (
@@ -102,24 +111,45 @@ export function AdminPanel() {
                 <Card className="h-full flex flex-col">
                     <CardHeader>
                         <CardTitle>Správa uživatelů a hry</CardTitle>
-                        <CardDescription>Spravujte uživatelská nastavení a globální stav hry.</CardDescription>
+                        <CardDescription>Spravujte uživatelská nastavení, globální stav hry a vzhled.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col gap-6 min-h-0">
-                        <div className="flex items-center justify-between p-4 border rounded-lg bg-background">
-                            <div className="flex items-center gap-3">
-                            <Gamepad2 className="h-6 w-6" />
-                            <div>
-                                <Label htmlFor="game-mode" className="text-base font-semibold">Herní režim</Label>
-                                <p className="text-sm text-muted-foreground">
-                                    Aktuálně: <span className="font-bold">{gameState.replace('_', ' ')}</span>
-                                </p>
+                        <div className="flex-shrink-0 flex flex-col gap-6">
+                            <div className="flex items-center justify-between p-4 border rounded-lg bg-background">
+                                <div className="flex items-center gap-3">
+                                <Gamepad2 className="h-6 w-6" />
+                                <div>
+                                    <Label htmlFor="game-mode" className="text-base font-semibold">Herní režim</Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        Aktuálně: <span className="font-bold">{gameState.replace('_', ' ')}</span>
+                                    </p>
+                                </div>
+                                </div>
+                                <Switch
+                                    id="game-mode"
+                                    checked={gameState === 'hraje_se'}
+                                    onCheckedChange={toggleGameMode}
+                                />
                             </div>
+                            <div className="p-4 border rounded-lg bg-background">
+                              <div className="flex items-center gap-3 mb-3">
+                                  <Wallpaper className="h-6 w-6" />
+                                  <div>
+                                      <Label htmlFor="wallpaper-url" className="text-base font-semibold">Centrální tapeta</Label>
+                                      <p className="text-sm text-muted-foreground">Zadejte URL obrázku pro pozadí aplikace.</p>
+                                  </div>
+                              </div>
+                              <div className="flex gap-2">
+                                  <Input
+                                      id="wallpaper-url"
+                                      placeholder="https://.../obrazek.png"
+                                      value={wallpaperInput}
+                                      onChange={(e) => setWallpaperInput(e.target.value)}
+                                  />
+                                  <Button onClick={() => setWallpaper(wallpaperInput)}>Nastavit</Button>
+                                  <Button variant="outline" onClick={() => { setWallpaper(''); }}>Odstranit</Button>
+                              </div>
                             </div>
-                            <Switch
-                                id="game-mode"
-                                checked={gameState === 'hraje_se'}
-                                onCheckedChange={toggleGameMode}
-                            />
                         </div>
                         <div className="flex-1 flex flex-col min-h-0">
                             <h3 className="text-lg font-semibold mb-2">Spravovat uživatele</h3>

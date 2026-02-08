@@ -28,7 +28,7 @@ export function Header() {
   }, []);
 
   return (
-    <header className="flex items-center justify-between p-3 border-b bg-card/20">
+    <header className="flex items-center justify-between p-3 border-b bg-card/80 backdrop-blur-md">
       <div className="flex items-center gap-4">
         <h1 className="text-xl font-bold font-headline tracking-tight text-primary-foreground">
           MikyOS

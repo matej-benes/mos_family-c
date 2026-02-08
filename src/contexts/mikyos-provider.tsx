@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { createContext, useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import type { User, UserRole, GameState, ActiveApp, Call, CallStatus } from '@/lib/types';
+import type { User, UserRole, GameState, ActiveApp, Call, CallStatus, Settings } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, where, onSnapshot, updateDoc, addDoc, getDoc, collectionGroup, writeBatch } from 'firebase/firestore';
@@ -40,6 +40,9 @@ interface MikyosContextType {
   activeCall: Call | null;
   localStream: MediaStream | null;
   remoteStream: MediaStream | null;
+  // Wallpaper
+  wallpaperUrl?: string;
+  setWallpaper: (url: string) => void;
 }
 
 export const MikyosContext = createContext<MikyosContextType | undefined>(undefined);
@@ -68,8 +71,13 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   const gameStateDoc = useMemoFirebase(() => firestore ? doc(firestore, 'gameState', 'global') : null, [firestore]);
   const { data: gameStateData, isLoading: gameStateLoading } = useDoc<{mode: GameState}>(gameStateDoc);
 
+  const settingsDoc = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'global') : null, [firestore]);
+  const { data: settingsData } = useDoc<Settings>(settingsDoc);
+
   const users = useMemo(() => usersData || [], [usersData]);
   const gameState = useMemo(() => gameStateData?.mode || 'nehraje_se', [gameStateData]);
+  const wallpaperUrl = useMemo(() => settingsData?.wallpaperUrl, [settingsData]);
+
 
   useEffect(() => {
     const getOrSetDeviceId = (): string => {
@@ -403,6 +411,16 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     toast({ title: "Herní režim změněn", description: `Hra je nyní ${newState.replace('_', ' ')}.` });
   }
 
+  const setWallpaper = (url: string) => {
+    if (!currentUser || !['superadmin', 'starší'].includes(currentUser.role) || !firestore) {
+      toast({ variant: 'destructive', title: "Oprávnění odepřeno", description: "Pro změnu tapety nemáte oprávnění." });
+      return;
+    }
+    const settingsRef = doc(firestore, 'settings', 'global');
+    setDocumentNonBlocking(settingsRef, { wallpaperUrl: url }, { merge: true });
+    toast({ title: url ? "Tapeta nastavena" : "Tapeta odstraněna" });
+  };
+
   const value = {
     currentUser,
     users,
@@ -425,6 +443,8 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     activeCall,
     localStream,
     remoteStream,
+    wallpaperUrl,
+    setWallpaper,
   };
 
   return <MikyosContext.Provider value={value}>{children}</MikyosContext.Provider>;

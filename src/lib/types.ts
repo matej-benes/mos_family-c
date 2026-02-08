@@ -50,3 +50,8 @@ export type Chat = {
     timestamp: any;
   }
 };
+
+export type Settings = {
+  id: string;
+  wallpaperUrl?: string;
+};
