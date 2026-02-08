@@ -4,7 +4,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user within the MikyOS Family Connect application.",
+      "description": "Represents a user account. Each user is uniquely associated with a physical device via the deviceId property. Authentication for a user is handled via a PIN on that specific device.",
       "properties": {
         "pin": {
           "type": "string",
@@ -46,31 +46,19 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Device",
       "type": "object",
-      "description": "Represents a device within the MikyOS Family Connect application.",
+      "description": "Represents a device within the MikyOS Family Connect application, holding device-specific settings like app approvals.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Device entity."
-        },
-        "role": {
-          "type": "string",
-          "description": "The role associated with the device ('mladší' or 'starší')."
-        },
-        "bedtime": {
-          "type": "string",
-          "description": "Timestamp indicating the bedtime for the device.",
-          "format": "date-time"
+          "description": "Unique identifier for the Device entity. This should match the deviceId on the User entity."
         },
         "approvals": {
           "type": "string",
-          "description": "Json string of approved apps and contacts. Stored as a JSON string. {apps:[], contacts:[]}}"
+          "description": "JSON string of approved apps and contacts. Example: {\"apps\":[], \"contacts\":[]}"
         }
       },
       "required": [
-        "id",
-        "role",
-        "bedtime",
-        "approvals"
+        "id"
       ]
     },
     "GameState": {
@@ -141,7 +129,7 @@
           "schema": {
             "$ref": "#/backend/entities/Device"
           },
-          "description": "Stores device information, including role, bedtime, and approved apps/contacts.",
+          "description": "Stores device-specific information, like approved apps and contacts.",
           "params": [
             {
               "name": "deviceId",
