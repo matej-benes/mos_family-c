@@ -27,9 +27,9 @@ export function MessagingPanel() {
   const approvedContacts = useMemo(() => {
     if (!currentUser) return [];
 
-    // Older siblings can message anyone (except superadmin) without specific approval
+    // Older siblings can message anyone
     if (currentUser.role === 'starší') {
-      return users.filter(u => u.id !== currentUser.id && u.role !== 'superadmin');
+      return users.filter(u => u.id !== currentUser.id);
     }
 
     // Younger siblings can only message contacts from their approval list
