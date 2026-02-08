@@ -31,9 +31,10 @@ interface MikyosContextType {
   setActiveApp: (app: ActiveApp) => void;
   toggleGameMode: () => void;
   setBedtime: (userId: string, time: string) => void;
-  updateUserApprovals: (userId: string, approvals: { apps: string[]; contacts: string[] }) => void;
+  updateUserApprovals: (userId: string, approvals: { apps: string[]; contacts: string[] }, toastOptions?: { title: string; description: string } | null) => void;
   setManualLock: (userId: string, message: string) => void;
   clearManualLock: (userId: string) => void;
+  approveContactInPerson: (requesterId: string, targetContactId: string, approverId: string, approverPin: string) => Promise<boolean>;
   // WebRTC calling state and functions
   startCall: (calleeId: string) => void;
   answerCall: () => void;
@@ -317,15 +318,15 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
       setLockMessage('Pro pokračování se prosím přihlaste.');
       return;
     }
+    
+    if (['superadmin', 'starší'].includes(currentUser.role)) {
+      setIsLocked(false);
+      return;
+    }
 
     if (currentUser.isManuallyLocked) {
       setIsLocked(true);
       setLockMessage(currentUser.manualLockMessage || 'Aplikace byla uzamčena administrátorem.');
-      return;
-    }
-
-    if (['superadmin', 'starší'].includes(currentUser.role)) {
-      setIsLocked(false);
       return;
     }
 
@@ -401,11 +402,52 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     toast({ title: "Večerka aktualizována", description: `Požadavek na změnu večerky pro uživatele byl odeslán.` });
   };
   
-  const updateUserApprovals = (userId: string, approvals: { apps: string[]; contacts: string[] }) => {
+  const updateUserApprovals = (userId: string, approvals: { apps: string[]; contacts: string[] }, toastOptions?: { title: string; description: string } | null) => {
     if (!firestore) return;
     const userDocRef = doc(firestore, 'users', userId);
     updateDocumentNonBlocking(userDocRef, { approvals });
-    toast({ title: "Schválení aktualizováno", description: "Seznam schválených položek byl upraven." });
+
+    if (toastOptions === null) return; // Suppress toast if null is passed
+
+    toast(toastOptions || { title: "Schválení aktualizováno", description: "Seznam schválených položek byl upraven." });
+  };
+
+  const approveContactInPerson = async (requesterId: string, targetContactId: string, approverId: string, approverPin: string): Promise<boolean> => {
+    const approver = users.find(u => u.id === approverId);
+    if (!approver || !['starší', 'superadmin'].includes(approver.role) || approver.pin !== approverPin) {
+      toast({ variant: 'destructive', title: 'Ověření selhalo', description: 'Neplatný PIN nebo nedostatečná oprávnění.' });
+      return false;
+    }
+
+    const requester = users.find(u => u.id === requesterId);
+    if (!requester) {
+        console.error("Requester not found in approveContactInPerson");
+        return false;
+    }
+    
+    const userToApprove = users.find(u => u.id === targetContactId);
+    if (!userToApprove) {
+        console.error("Target contact not found in approveContactInPerson");
+        return false;
+    }
+
+    const currentApprovals = requester.approvals || { apps: [], contacts: [] };
+    if (currentApprovals.contacts.includes(targetContactId)) {
+        return true; // Already approved
+    }
+
+    const newApprovals = {
+      ...currentApprovals,
+      contacts: [...currentApprovals.contacts, targetContactId],
+    };
+
+    const successToast = {
+        title: 'Kontakt schválen!',
+        description: `${requester.name} může nyní psát s ${userToApprove.name}.`
+    };
+    
+    updateUserApprovals(requesterId, newApprovals, successToast);
+    return true;
   };
 
   const toggleGameMode = () => {
@@ -469,6 +511,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     setWallpaper,
     setManualLock,
     clearManualLock,
+    approveContactInPerson,
   };
 
   return <MikyosContext.Provider value={value}>{children}</MikyosContext.Provider>;
