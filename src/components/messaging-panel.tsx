@@ -25,8 +25,17 @@ export function MessagingPanel() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const approvedContacts = useMemo(() => {
-    if (!currentUser?.approvals?.contacts) return [];
-    return users.filter(u => currentUser.approvals.contacts.includes(u.id));
+    if (!currentUser) return [];
+
+    // Older siblings can message anyone (except superadmin) without specific approval
+    if (currentUser.role === 'starší') {
+      return users.filter(u => u.id !== currentUser.id && u.role !== 'superadmin');
+    }
+
+    // Younger siblings can only message contacts from their approval list
+    if (!currentUser.approvals?.contacts) return [];
+    return users.filter(u => currentUser.approvals!.contacts.includes(u.id));
+
   }, [currentUser, users]);
 
   useEffect(() => {
@@ -107,7 +116,7 @@ export function MessagingPanel() {
         <CardContent className="flex-1 min-h-0">
             <ScrollArea className="h-full -mr-6 pr-6">
                 <div className="space-y-2">
-                    <h3 className="px-4 text-sm font-semibold text-muted-foreground">Schválené kontakty</h3>
+                    <h3 className="px-4 text-sm font-semibold text-muted-foreground">Kontakty</h3>
                      {approvedContacts.length > 0 ? approvedContacts.map(user => (
                         <button key={user.id} onClick={() => setSelectedUser(user)} className="flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-accent transition-colors">
                              <Avatar>
@@ -120,7 +129,7 @@ export function MessagingPanel() {
                             </div>
                         </button>
                     )) : (
-                        <p className="text-muted-foreground text-center py-8">Nemáte žádné schválené kontakty pro zasílání zpráv.</p>
+                        <p className="text-muted-foreground text-center py-8">Nemáte žádné dostupné kontakty pro zasílání zpráv.</p>
                     )}
                 </div>
             </ScrollArea>

@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMikyos } from '@/hooks/use-mikyos';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Phone, PhoneCall, PhoneOff, Mic, MicOff, Video, VideoOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
 
 
 function VideoPlayer({ stream, muted = false, isLocal = false }: { stream: MediaStream | null, muted?: boolean, isLocal?: boolean }) {
@@ -32,12 +31,52 @@ export function CallModal() {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
 
+  const incomingAudioRef = useRef<HTMLAudioElement>(null);
+  const outgoingAudioRef = useRef<HTMLAudioElement>(null);
+
   const call = activeCall || incomingCall;
   if (!call) return null;
 
   const isIncoming = !!incomingCall && !activeCall;
   const isOutgoing = !!activeCall && activeCall.status === 'pending';
   const isInCall = !!activeCall && activeCall.status === 'answered';
+
+  useEffect(() => {
+    const playSound = (audioRef: React.RefObject<HTMLAudioElement>) => {
+      // Browsers may block autoplay until user interacts with the page
+      audioRef.current?.play().catch(e => console.error("Audio play failed. User interaction may be required.", e));
+    };
+    const pauseSound = (audioRef: React.RefObject<HTMLAudioElement>) => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+
+    if (isIncoming) {
+      playSound(incomingAudioRef);
+    } else {
+      pauseSound(incomingAudioRef);
+    }
+
+    if (isOutgoing) {
+      playSound(outgoingAudioRef);
+    } else {
+      pauseSound(outgoingAudioRef);
+    }
+    
+    // Explicitly stop sounds when call is connected
+    if (isInCall) {
+        pauseSound(incomingAudioRef);
+        pauseSound(outgoingAudioRef);
+    }
+
+    // Cleanup sounds when component unmounts
+    return () => {
+      pauseSound(incomingAudioRef);
+      pauseSound(outgoingAudioRef);
+    }
+  }, [isIncoming, isOutgoing, isInCall]);
 
   const caller = users.find(u => u.id === call.callerId);
   const callee = users.find(u => u.id === call.calleeId);
@@ -72,6 +111,9 @@ export function CallModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+       <audio ref={incomingAudioRef} src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" loop />
+       <audio ref={outgoingAudioRef} src="https://actions.google.com/sounds/v1/emergency/beeper_emergency_call.ogg" loop />
+
       <Card className="w-[90vw] h-[90vh] max-w-4xl max-h-[800px] flex flex-col shadow-2xl">
         <CardHeader className="text-center">
             <CardTitle className="text-2xl">{title}</CardTitle>
