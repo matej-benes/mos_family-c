@@ -24,35 +24,6 @@ interface MikyosContextType {
 
 export const MikyosContext = createContext<MikyosContextType | undefined>(undefined);
 
-const DEMO_USERS: Omit<User, 'id'>[] = [
-    {
-      name: 'Super Admin',
-      username: 'superadmin',
-      pin: '1234',
-      role: 'superadmin',
-      avatarUrl: 'https://picsum.photos/seed/1/100/100',
-      dataAiHint: 'person portrait',
-    },
-    {
-      name: 'Starší Sibling',
-      username: 'starsi',
-      pin: '1234',
-      role: 'starší',
-      bedtime: '22:00',
-      avatarUrl: 'https://picsum.photos/seed/2/100/100',
-      dataAiHint: 'teenager portrait',
-    },
-    {
-      name: 'Mladší Sibling',
-      username: 'mladsi',
-      pin: '1234',
-      role: 'mladší',
-      bedtime: '20:30',
-      avatarUrl: 'https://picsum.photos/seed/3/100/100',
-      dataAiHint: 'child portrait',
-    },
-];
-
 export function MikyosProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeApp, setActiveApp] = useState<ActiveApp>(null);
@@ -70,22 +41,6 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   const users = useMemo(() => usersData || [], [usersData]);
   const gameState = useMemo(() => gameStateData?.mode || 'nehraje_se', [gameStateData]);
   
-  // Seed database with demo data if it's empty
-  useEffect(() => {
-    if (firestore && !usersLoading && users.length === 0) {
-      console.log("No users found, seeding database with demo data...");
-      const gameStateRef = doc(firestore, 'gameState', 'global');
-      setDocumentNonBlocking(gameStateRef, { mode: 'nehraje_se' }, { merge: true });
-
-      DEMO_USERS.forEach(user => {
-        const userRef = doc(collection(firestore, 'users'));
-        setDocumentNonBlocking(userRef, user, { merge: true });
-      });
-       toast({ title: "Demo users created", description: "Database has been seeded with test users." });
-    }
-  }, [firestore, users, usersLoading]);
-
-
   const checkLockState = useCallback(() => {
     if (!currentUser) {
       setIsLocked(true);
