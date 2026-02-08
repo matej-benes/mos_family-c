@@ -38,7 +38,7 @@ export function MessagingPanel() {
   
   const contacts = useMemo(() => {
     if (!currentUser) return [];
-    return users.filter(u => u.id !== currentUser.id);
+    return users.filter(u => u.id !== currentUser.id && u.role !== 'superadmin');
   }, [currentUser, users]);
 
   const olderSiblings = useMemo(() => users.filter(u => u.role === 'starší'), [users]);
