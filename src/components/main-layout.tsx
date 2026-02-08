@@ -4,7 +4,6 @@ import { useMikyos } from '@/hooks/use-mikyos';
 import { LockScreen } from '@/components/lock-screen';
 import { HomeScreen } from '@/components/home-screen';
 import { Header } from '@/components/header';
-import { CallApp } from '@/components/call-app';
 import { AdminPanel } from '@/components/admin-panel';
 import { AiPanel } from '@/components/ai-panel';
 
@@ -21,8 +20,6 @@ export function MainLayout() {
   
   const renderActiveApp = () => {
     switch (activeApp) {
-      case 'call':
-        return <CallApp />;
       case 'admin':
         return <AdminPanel />;
       case 'ai':

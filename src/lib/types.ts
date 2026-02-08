@@ -13,4 +13,4 @@ export type User = {
 
 export type GameState = "hraje_se" | "nehraje_se";
 
-export type ActiveApp = null | "call" | "admin" | "ai";
+export type ActiveApp = null | "admin" | "ai";
