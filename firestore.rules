@@ -1,0 +1,167 @@
+/**
+ * This ruleset enforces a role-based security model for the MikyOS Family Connect application.
+ * It assumes that standard Firebase Authentication is used to identify users, where the authenticated
+ * user's UID (`request.auth.uid`) corresponds to their document ID in the `/users` collection.
+ *
+ * Core Philosophy:
+ * The rules establish a hierarchy of permissions based on user roles defined in their user document.
+ * A 'superadmin' has the highest level of access, followed by 'starší' (senior) users, and then
+ * 'mladší' (junior) users with the most restricted access. Users have full control over their own
+ * profile document.
+ *
+ * Data Structure:
+ * The database is organized into three top-level collections:
+ * - `/users/{userId}`: Stores individual user profiles, including their role and associated device.
+ * - `/devices/{deviceId}`: Stores settings for devices, which can be managed by senior users.
+ * - `/gameState/global`: A singleton document that holds the global application state.
+ *
+ * Key Security Decisions:
+ * - User Privacy: Listing the entire `/users` collection is disabled to prevent user enumeration
+ *   and protect personally identifiable information.
+ * - Role-Based Access: Access to shared resources like `/devices` and `/gameState` is determined by
+ *   reading the user's role from their document in `/users`. This centralizes permission logic.
+ * - Singleton Security: The `/gameState/global` document has special rules to ensure it can only be
+ *   written to by a 'superadmin' and its path is always 'global'.
+ * - Default Posture: Access is denied by default. Permissions are explicitly granted based on
+ *   user identity and role.
+ *
+ * Denormalization for Authorization:
+ * Each user's document at `/users/{userId}` contains their `role` and `deviceId`. The security
+ * rules for `/devices` and `/gameState` perform a `get()` operation on the current user's
+ * document (`/users/$(request.auth.uid)`) to check these fields. This allows for centralized and
+ * efficient role-based authorization without needing to query other collections.
+ *
+ * Structural Segregation:
+ * The separation of users, devices, and game state into different top-level collections allows for
+ * clear, distinct security rules for each data type, preventing accidental data leakage and simplifying
+ * client-side queries.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+
+    /**
+     * Checks if the user is authenticated via Firebase Authentication.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the given userId.
+     * This is the foundation of the user-ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Fetches the requesting user's profile document from the '/users' collection.
+     * This is used to make role-based authorization decisions.
+     */
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    /**
+     * Checks if the requesting user has the 'superadmin' role.
+     */
+    function isSuperAdmin() {
+      return isSignedIn() && getUserData().role == 'superadmin';
+    }
+
+    /**
+     * Checks if the requesting user has the 'starší' (senior) role.
+     */
+    function isSenior() {
+      return isSignedIn() && getUserData().role == 'starší';
+    }
+
+    /**
+     * Checks if the user has either 'starší' or 'superadmin' role,
+     * granting them elevated privileges for device management.
+     */
+    function isSeniorOrSuperAdmin() {
+      return isSenior() || isSuperAdmin();
+    }
+
+    /**
+     * Checks if the requesting user's profile is linked to the specified deviceId.
+     */
+    function isAssociatedWithDevice(deviceId) {
+      return isSignedIn() && getUserData().deviceId == deviceId;
+    }
+
+    // --- Validation Helper Functions (Prototyping Mode) ---
+
+    /**
+     * On create, validates the user document's internal `id` field matches the document path.
+     * This establishes the ownership link.
+     */
+    function hasValidUserIdOnCreate(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * On update, ensures the user document's internal `id` field is immutable.
+     * This prevents re-assigning ownership of the document.
+     */
+    function hasImmutableUserId() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * On create, validates that a new gameState document correctly identifies the creating superadmin.
+     */
+    function hasValidSuperAdminIdOnCreate() {
+      return request.resource.data.superadminId == request.auth.uid;
+    }
+
+    /**
+     * @description Users can create their own profile and can only read, update, or delete their own data.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user with UID 'user123' creates their document at `/users/user123`.
+     * @deny (get) An authenticated user with UID 'user456' tries to read data from `/users/user123`.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && hasValidUserIdOnCreate(userId);
+      allow update: if isOwner(userId) && resource != null && hasImmutableUserId();
+      allow delete: if isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description 'superadmin' and 'starší' users have full control over all devices. 'mladší' users can only read their assigned device.
+     * @path /devices/{deviceId}
+     * @allow (update) A user with the 'starší' role updates the 'bedtime' on any device document.
+     * @deny (update) A user with the 'mladší' role tries to change the 'bedtime' on their own assigned device.
+     * @principle Implements role-based access control (RBAC) for shared resources by checking user roles from another collection.
+     */
+    match /devices/{deviceId} {
+      allow get: if isSeniorOrSuperAdmin() || isAssociatedWithDevice(deviceId);
+      allow list: if isSeniorOrSuperAdmin();
+      allow create: if isSeniorOrSuperAdmin();
+      allow update: if isSeniorOrSuperAdmin() && resource != null;
+      allow delete: if isSeniorOrSuperAdmin() && resource != null;
+    }
+
+    /**
+     * @description A global singleton document ('global') that controls game state. Readable by any signed-in user, but writable only by a 'superadmin'.
+     * @path /gameState/{gameStateId}
+     * @allow (update) A user with the 'superadmin' role updates the 'mode' field in `/gameState/global`.
+     * @deny (create) A 'starší' user attempts to create a new gameState document.
+     * @principle Secures a critical singleton resource using a high-privilege role check.
+     */
+    match /gameState/{gameStateId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSuperAdmin() && gameStateId == 'global' && hasValidSuperAdminIdOnCreate();
+      allow update: if isSuperAdmin() && resource != null && gameStateId == 'global';
+      allow delete: if isSuperAdmin() && resource != null && gameStateId == 'global';
+    }
+  }
+}
