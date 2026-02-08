@@ -14,11 +14,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './
 import { useState } from 'react';
 import { Badge } from './ui/badge';
 import type { User } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 export function AdminPanel() {
   const { currentUser, users, gameState, toggleGameMode, setBedtime, updateUserApprovals } = useMikyos();
   const [newApprovalItems, setNewApprovalItems] = useState<{[key: string]: string}>({});
+  const [selectedContacts, setSelectedContacts] = useState<{[key: string]: string}>({});
 
   if (!currentUser || !['superadmin', 'starší'].includes(currentUser.role)) {
     return (
@@ -39,24 +41,36 @@ export function AdminPanel() {
     setNewApprovalItems(prev => ({...prev, [key]: value}));
   };
   
-  const handleAddItem = (user: User, type: 'apps' | 'contacts') => {
-    const key = `${user.id}-${type}`;
-    const newItem = newApprovalItems[key]?.trim();
-    if (!newItem) return;
-  
-    const currentApprovals = user.approvals || { apps: [], contacts: [] };
-    // Prevent duplicates
-    if ((currentApprovals[type] || []).includes(newItem)) return;
+  const handleContactSelectChange = (userId: string, contactId: string) => {
+    setSelectedContacts(prev => ({...prev, [userId]: contactId}));
+  };
 
-    const updatedItems = [...(currentApprovals[type] || []), newItem];
-  
-    const newApprovals = {
-      ...currentApprovals,
-      [type]: updatedItems,
-    };
+  const handleAddItem = (user: User, type: 'apps' | 'contacts') => {
+    const currentApprovals = user.approvals || { apps: [], contacts: [] };
+    let newApprovals = {...currentApprovals};
+
+    if (type === 'apps') {
+      const key = `${user.id}-apps`;
+      const newItem = newApprovalItems[key]?.trim();
+      if (!newItem || (currentApprovals.apps || []).includes(newItem)) return;
+
+      newApprovals = {
+        ...currentApprovals,
+        apps: [...(currentApprovals.apps || []), newItem],
+      };
+      handleNewItemChange(key, ''); // Clear input
+    } else { // contacts
+      const contactIdToAdd = selectedContacts[user.id];
+      if (!contactIdToAdd || (currentApprovals.contacts || []).includes(contactIdToAdd)) return;
+
+      newApprovals = {
+        ...currentApprovals,
+        contacts: [...(currentApprovals.contacts || []), contactIdToAdd],
+      };
+      handleContactSelectChange(user.id, ''); // Clear selection
+    }
   
     updateUserApprovals(user.id, newApprovals);
-    handleNewItemChange(key, ''); // Clear input
   }
   
   const handleRemoveItem = (user: User, type: 'apps' | 'contacts', itemToRemove: string) => {
@@ -72,6 +86,7 @@ export function AdminPanel() {
   }
 
   const youngerUsers = users.filter(u => u.role === 'mladší');
+  const allPossibleContacts = users.filter(u => u.role !== 'superadmin');
 
 
   return (
@@ -151,7 +166,11 @@ export function AdminPanel() {
                     <CardContent className="flex-1 min-h-0">
                       <ScrollArea className="h-full -mr-6 pr-6">
                         <Accordion type="single" collapsible className="w-full">
-                          {youngerUsers.map(user => (
+                          {youngerUsers.map(user => {
+                            const approvedContactIds = user.approvals?.contacts || [];
+                            const availableContacts = allPossibleContacts.filter(c => c.id !== user.id && !approvedContactIds.includes(c.id));
+                            
+                            return (
                             <AccordionItem value={user.id} key={user.id}>
                               <AccordionTrigger>
                                 <div className="flex items-center gap-2">
@@ -191,24 +210,50 @@ export function AdminPanel() {
                   
                                 <div>
                                   <Label className="text-base font-semibold">Schválené kontakty</Label>
-                                  <div className="flex gap-2 my-2" onKeyDown={(e) => e.key === 'Enter' && handleAddItem(user, 'contacts')}>
-                                    <Input 
-                                      placeholder="Např. Babička"
-                                      value={newApprovalItems[`${user.id}-contacts`] || ''}
-                                      onChange={(e) => handleNewItemChange(`${user.id}-contacts`, e.target.value)}
-                                    />
-                                    <Button onClick={() => handleAddItem(user, 'contacts')}><PlusCircle className="mr-2 h-4 w-4" />Přidat</Button>
+                                  <div className="flex gap-2 my-2">
+                                    <Select
+                                        value={selectedContacts[user.id] || ''}
+                                        onValueChange={(contactId) => handleContactSelectChange(user.id, contactId)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Vyberte kontakt" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableContacts.length > 0 ? availableContacts.map(contact => (
+                                                <SelectItem key={contact.id} value={contact.id}>
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar className="h-6 w-6">
+                                                            <AvatarImage src={contact.avatarUrl} />
+                                                            <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <span>{contact.name}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            )) : (
+                                                <div className="px-2 py-1.5 text-sm text-muted-foreground">Všichni dostupní uživatelé jsou již schváleni.</div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    <Button onClick={() => handleAddItem(user, 'contacts')} disabled={!selectedContacts[user.id]}><PlusCircle className="mr-2 h-4 w-4" />Přidat</Button>
                                   </div>
                                   <div className="flex flex-wrap gap-2">
                                      {(user.approvals?.contacts || []).length > 0 ? (
-                                      (user.approvals?.contacts || []).map(contact => (
-                                        <Badge key={contact} variant="secondary" className="text-sm py-1 pl-3 pr-2">
-                                          {contact}
-                                          <button onClick={() => handleRemoveItem(user, 'contacts', contact)} className="ml-2 rounded-full hover:bg-destructive/20 p-0.5">
-                                             <X className="h-3 w-3" />
-                                          </button>
-                                        </Badge>
-                                      ))
+                                      (user.approvals?.contacts || []).map(contactId => {
+                                        const contact = users.find(u => u.id === contactId);
+                                        if (!contact) return null;
+                                        return (
+                                          <Badge key={contact.id} variant="secondary" className="text-sm py-1 pl-2 pr-2 h-8 flex items-center">
+                                              <Avatar className="h-6 w-6 mr-2">
+                                                  <AvatarImage src={contact.avatarUrl} />
+                                                  <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
+                                              </Avatar>
+                                              <span>{contact.name}</span>
+                                              <button onClick={() => handleRemoveItem(user, 'contacts', contact.id)} className="ml-2 rounded-full hover:bg-destructive/20 p-0.5">
+                                                 <X className="h-3 w-3" />
+                                              </button>
+                                          </Badge>
+                                        )
+                                      })
                                     ) : (
                                        <p className="text-sm text-muted-foreground">Žádné schválené kontakty.</p>
                                     )}
@@ -217,7 +262,7 @@ export function AdminPanel() {
                   
                               </AccordionContent>
                             </AccordionItem>
-                          ))}
+                          )})}
                            {youngerUsers.length === 0 && (
                               <p className="text-muted-foreground text-center py-4">
                                   Nejsou zde žádní uživatelé s rolí 'mladší'.
