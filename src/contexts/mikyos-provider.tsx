@@ -149,7 +149,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     if (userToLogin) {
       setCurrentUser(userToLogin);
       setActiveApp(null);
-      toast({ title: "Logged In", description: `Welcome, ${userToLogin.name}!` });
+      toast({ title: `Vítej, ${userToLogin.name}!`, description: "Jsi přihlášen." });
     } else {
         toast({ variant: 'destructive', title: "Login Failed", description: "Invalid username or PIN." });
     }
