@@ -9,6 +9,10 @@ export type User = {
   bedtime?: string; // HH:mm format
   avatarUrl: string;
   dataAiHint: string;
+  approvals?: {
+    apps: string[];
+    contacts: string[];
+  };
 };
 
 export type GameState = "hraje_se" | "nehraje_se";

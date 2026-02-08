@@ -31,6 +31,7 @@ interface MikyosContextType {
   setActiveApp: (app: ActiveApp) => void;
   toggleGameMode: () => void;
   setBedtime: (userId: string, time: string) => void;
+  updateUserApprovals: (userId: string, approvals: { apps: string[]; contacts: string[] }) => void;
   // WebRTC calling state and functions
   startCall: (calleeId: string) => void;
   answerCall: () => void;
@@ -384,6 +385,13 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     toast({ title: "Večerka aktualizována", description: `Požadavek na změnu večerky pro uživatele byl odeslán.` });
   };
   
+  const updateUserApprovals = (userId: string, approvals: { apps: string[]; contacts: string[] }) => {
+    if (!firestore) return;
+    const userDocRef = doc(firestore, 'users', userId);
+    updateDocumentNonBlocking(userDocRef, { approvals });
+    toast({ title: "Schválení aktualizováno", description: "Seznam schválených položek byl upraven." });
+  };
+
   const toggleGameMode = () => {
     if (currentUser?.role !== 'superadmin' || !firestore) {
       toast({ variant: 'destructive', title: "Oprávnění odepřeno", description: "Pouze Super Admin může změnit herní režim." });
@@ -409,6 +417,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     setActiveApp,
     toggleGameMode,
     setBedtime,
+    updateUserApprovals,
     startCall,
     answerCall,
     hangUp,

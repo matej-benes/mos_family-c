@@ -34,6 +34,22 @@
         "bedtime": {
             "type": "string",
             "description": "Bedtime for the user in HH:mm format."
+        },
+        "approvals": {
+          "type": "object",
+          "description": "Approved apps and contacts for the user.",
+          "properties": {
+            "apps": {
+              "type": "array",
+              "description": "List of approved application names.",
+              "items": { "type": "string" }
+            },
+            "contacts": {
+              "type": "array",
+              "description": "List of approved contact names.",
+              "items": { "type": "string" }
+            }
+          }
         }
       },
       "required": [
@@ -46,15 +62,11 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Device",
       "type": "object",
-      "description": "Represents a device within the MikyOS Family Connect application, holding device-specific settings like app approvals.",
+      "description": "Represents a device within the MikyOS Family Connect application.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the Device entity. This should match one of the deviceIds on the User entity."
-        },
-        "approvals": {
-          "type": "string",
-          "description": "JSON string of approved apps and contacts. Example: {\"apps\":[], \"contacts\":[]}"
         }
       },
       "required": [
