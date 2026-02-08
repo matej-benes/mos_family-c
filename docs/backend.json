@@ -50,6 +50,14 @@
               "items": { "type": "string" }
             }
           }
+        },
+        "isManuallyLocked": {
+            "type": "boolean",
+            "description": "Whether the user is manually locked out by an admin."
+        },
+        "manualLockMessage": {
+            "type": "string",
+            "description": "The message to display when the user is manually locked out."
         }
       },
       "required": [

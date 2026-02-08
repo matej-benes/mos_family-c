@@ -13,6 +13,8 @@ export type User = {
     apps: string[];
     contacts: string[];
   };
+  isManuallyLocked?: boolean;
+  manualLockMessage?: string;
 };
 
 export type GameState = "hraje_se" | "nehraje_se";

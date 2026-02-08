@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Gamepad2, Users, Moon, ShieldCheck, PlusCircle, X, Wallpaper } from 'lucide-react';
+import { Gamepad2, Users, Moon, ShieldCheck, PlusCircle, X, Wallpaper, Lock, Unlock } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from './ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
@@ -18,10 +18,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 
 export function AdminPanel() {
-  const { currentUser, users, gameState, toggleGameMode, setBedtime, updateUserApprovals, wallpaperUrl, setWallpaper } = useMikyos();
+  const { currentUser, users, gameState, toggleGameMode, setBedtime, updateUserApprovals, wallpaperUrl, setWallpaper, setManualLock, clearManualLock } = useMikyos();
   const [newApprovalItems, setNewApprovalItems] = useState<{[key: string]: string}>({});
   const [selectedContacts, setSelectedContacts] = useState<{[key: string]: string}>({});
   const [wallpaperInput, setWallpaperInput] = useState('');
+  const [manualLockMessages, setManualLockMessages] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     if (wallpaperUrl) {
@@ -30,6 +31,18 @@ export function AdminPanel() {
       setWallpaperInput('');
     }
   }, [wallpaperUrl]);
+  
+  useEffect(() => {
+    // Pre-fill lock messages from user data
+    const initialLockMessages: {[key: string]: string} = {};
+    users.forEach(user => {
+      if (user.isManuallyLocked && user.manualLockMessage) {
+        initialLockMessages[user.id] = user.manualLockMessage;
+      }
+    });
+    setManualLockMessages(initialLockMessages);
+  }, [users]);
+
 
   if (!currentUser || !['superadmin', 'starší'].includes(currentUser.role)) {
     return (
@@ -94,6 +107,17 @@ export function AdminPanel() {
     updateUserApprovals(user.id, newApprovals);
   }
 
+  const handleManualLockMessageChange = (userId: string, message: string) => {
+    setManualLockMessages(prev => ({ ...prev, [userId]: message }));
+  };
+
+  const handleSetManualLock = (userId: string) => {
+    const message = manualLockMessages[userId];
+    if (message) {
+      setManualLock(userId, message);
+    }
+  };
+
   const youngerUsers = users.filter(u => u.role === 'mladší');
   const allPossibleContacts = users.filter(u => u.role !== 'superadmin');
 
@@ -156,27 +180,56 @@ export function AdminPanel() {
                             <ScrollArea className="flex-1 -mr-6 pr-6">
                                 <div className="space-y-4">
                                 {users.filter(u => u.role !== 'superadmin').map(user => (
-                                    <div key={user.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg gap-4">
-                                    <div className="flex items-center gap-4">
-                                        <Avatar>
-                                        <AvatarImage src={user.avatarUrl} data-ai-hint={user.dataAiHint} />
-                                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                        <p className="font-semibold">{user.name}</p>
-                                        <p className="text-sm text-muted-foreground">Role: {user.role}</p>
+                                    <div key={user.id} className="p-4 border rounded-lg flex flex-col gap-4">
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                            <div className="flex items-center gap-4">
+                                                <Avatar>
+                                                <AvatarImage src={user.avatarUrl} data-ai-hint={user.dataAiHint} />
+                                                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                <p className="font-semibold">{user.name}</p>
+                                                <p className="text-sm text-muted-foreground">Role: {user.role}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                                <Moon className="h-5 w-5 text-muted-foreground" />
+                                                <Input
+                                                type="time"
+                                                defaultValue={user.bedtime}
+                                                onChange={(e) => handleBedtimeChange(user.id, e.target.value)}
+                                                className="w-full sm:w-auto"
+                                                aria-label={`Večerka pro ${user.name}`}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                                        <Moon className="h-5 w-5 text-muted-foreground" />
-                                        <Input
-                                        type="time"
-                                        defaultValue={user.bedtime}
-                                        onChange={(e) => handleBedtimeChange(user.id, e.target.value)}
-                                        className="w-full sm:w-auto"
-                                        aria-label={`Večerka pro ${user.name}`}
-                                        />
-                                    </div>
+                                        {user.role === 'mladší' && (
+                                            <div className="space-y-3 pt-3 border-t">
+                                                 <Label htmlFor={`lock-msg-${user.id}`} className="font-semibold">Manuální uzamčení</Label>
+                                                {user.isManuallyLocked ? (
+                                                     <div className='space-y-2'>
+                                                        <p className='text-sm text-destructive-foreground bg-destructive/80 p-2 rounded-md'>
+                                                            <span className='font-bold'>Uzamčeno:</span> {user.manualLockMessage}
+                                                        </p>
+                                                        <Button onClick={() => clearManualLock(user.id)} variant="outline" size="sm">
+                                                            <Unlock className="mr-2 h-4 w-4" />Odemknout
+                                                        </Button>
+                                                     </div>
+                                                ) : (
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            id={`lock-msg-${user.id}`}
+                                                            placeholder="Zpráva (např. Ukliď si pokoj!)"
+                                                            value={manualLockMessages[user.id] || ''}
+                                                            onChange={(e) => handleManualLockMessageChange(user.id, e.target.value)}
+                                                        />
+                                                        <Button onClick={() => handleSetManualLock(user.id)} disabled={!manualLockMessages[user.id]}>
+                                                            <Lock className="mr-2 h-4 w-4" />Zamknout
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                                 </div>

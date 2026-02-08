@@ -32,6 +32,8 @@ interface MikyosContextType {
   toggleGameMode: () => void;
   setBedtime: (userId: string, time: string) => void;
   updateUserApprovals: (userId: string, approvals: { apps: string[]; contacts: string[] }) => void;
+  setManualLock: (userId: string, message: string) => void;
+  clearManualLock: (userId: string) => void;
   // WebRTC calling state and functions
   startCall: (calleeId: string) => void;
   answerCall: () => void;
@@ -316,6 +318,12 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    if (currentUser.isManuallyLocked) {
+      setIsLocked(true);
+      setLockMessage(currentUser.manualLockMessage || 'Aplikace byla uzamčena administrátorem.');
+      return;
+    }
+
     if (['superadmin', 'starší'].includes(currentUser.role)) {
       setIsLocked(false);
       return;
@@ -421,6 +429,20 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     toast({ title: url ? "Tapeta nastavena" : "Tapeta odstraněna" });
   };
 
+  const setManualLock = (userId: string, message: string) => {
+    if (!firestore || !message) return;
+    const userDocRef = doc(firestore, 'users', userId);
+    updateDocumentNonBlocking(userDocRef, { isManuallyLocked: true, manualLockMessage: message });
+    toast({ title: "Uživatel uzamčen", description: "Uživatel byl manuálně uzamčen." });
+  };
+
+  const clearManualLock = (userId: string) => {
+    if (!firestore) return;
+    const userDocRef = doc(firestore, 'users', userId);
+    updateDocumentNonBlocking(userDocRef, { isManuallyLocked: false, manualLockMessage: '' });
+    toast({ title: "Uživatel odemčen", description: "Uživatel byl odemčen." });
+  };
+
   const value = {
     currentUser,
     users,
@@ -445,6 +467,8 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     remoteStream,
     wallpaperUrl,
     setWallpaper,
+    setManualLock,
+    clearManualLock,
   };
 
   return <MikyosContext.Provider value={value}>{children}</MikyosContext.Provider>;
