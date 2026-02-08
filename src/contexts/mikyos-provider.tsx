@@ -87,7 +87,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (deviceId && users.length > 0) {
-      const userForDevice = users.find(u => u.deviceId === deviceId);
+      const userForDevice = users.find(u => u.deviceIds && u.deviceIds.includes(deviceId));
       setDeviceUser(userForDevice || null);
     } else {
       setDeviceUser(null);

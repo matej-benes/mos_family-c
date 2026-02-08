@@ -5,7 +5,7 @@ export type User = {
   name: string;
   pin: string;
   role: UserRole;
-  deviceId: string;
+  deviceIds?: string[];
   bedtime?: string; // HH:mm format
   avatarUrl: string;
   dataAiHint: string;

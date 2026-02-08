@@ -4,7 +4,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user account. Each user is uniquely associated with a physical device via the deviceId property. Authentication for a user is handled via a PIN on that specific device.",
+      "description": "Represents a user account. Each user can be associated with multiple physical devices via the deviceIds property. Authentication for a user is handled via a PIN on a specific device.",
       "properties": {
         "pin": {
           "type": "string",
@@ -14,9 +14,10 @@
           "type": "string",
           "description": "The role of the user (e.g., 'superadmin', 'starší', 'mladší')."
         },
-        "deviceId": {
-          "type": "string",
-          "description": "The unique ID of the device the user is associated with. (Relationship: User 1:1 Device)"
+        "deviceIds": {
+          "type": "array",
+          "description": "The unique IDs of the devices the user is associated with.",
+          "items": { "type": "string" }
         },
         "name": {
             "type": "string",
@@ -38,8 +39,7 @@
       "required": [
         "pin",
         "role",
-        "name",
-        "deviceId"
+        "name"
       ]
     },
     "Device": {
@@ -50,7 +50,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Device entity. This should match the deviceId on the User entity."
+          "description": "Unique identifier for the Device entity. This should match one of the deviceIds on the User entity."
         },
         "approvals": {
           "type": "string",
