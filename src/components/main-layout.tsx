@@ -7,9 +7,10 @@ import { Header } from '@/components/header';
 import { AdminPanel } from '@/components/admin-panel';
 import { AiPanel } from '@/components/ai-panel';
 import { CallingPanel } from './calling-panel';
+import { CallModal } from './call-modal';
 
 export function MainLayout() {
-  const { isLocked, lockMessage, activeApp, currentUser } = useMikyos();
+  const { isLocked, lockMessage, activeApp, currentUser, incomingCall, activeCall } = useMikyos();
 
   if (!currentUser) {
     return <LockScreen message="Pro pokračování se prosím přihlaste." isLoginScreen />;
@@ -33,13 +34,16 @@ export function MainLayout() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground font-body">
-      <Header />
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-        <div className="w-full h-full rounded-xl bg-card/50 border p-4">
-          {renderActiveApp()}
-        </div>
-      </main>
-    </div>
+    <>
+      <div className="flex flex-col h-screen bg-background text-foreground font-body">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          <div className="w-full h-full rounded-xl bg-card/50 border p-4">
+            {renderActiveApp()}
+          </div>
+        </main>
+      </div>
+      {(incomingCall || activeCall) && <CallModal />}
+    </>
   );
 }

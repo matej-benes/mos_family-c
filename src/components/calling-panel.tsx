@@ -4,25 +4,15 @@ import { useMikyos } from '@/hooks/use-mikyos';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Phone } from 'lucide-react';
+import { Phone, CircleDashed } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
-
 
 export function CallingPanel() {
-  const { currentUser, users } = useMikyos();
-  const { toast } = useToast();
+  const { currentUser, users, startCall, activeCall } = useMikyos();
 
   const otherUsers = users.filter(user => user.id !== currentUser?.id && user.role !== 'superadmin');
   
-  const handleCall = (userName: string) => {
-    // For now, this is a placeholder.
-    // In the future, this would initiate a WebRTC call.
-    toast({
-      title: `Volání uživatele ${userName}`,
-      description: 'Tato funkce bude brzy implementována pomocí WebRTC.',
-    });
-  };
+  const isCalling = !!activeCall;
 
   return (
     <Card className="h-full flex flex-col">
@@ -47,8 +37,8 @@ export function CallingPanel() {
                       <p className="text-sm text-muted-foreground">Role: {user.role}</p>
                     </div>
                   </div>
-                  <Button onClick={() => handleCall(user.name)} size="icon" variant="outline">
-                    <Phone className="h-5 w-5" />
+                  <Button onClick={() => startCall(user.id)} size="icon" variant="outline" disabled={isCalling}>
+                    {isCalling && activeCall?.calleeId === user.id ? <CircleDashed className="h-5 w-5 animate-spin"/> : <Phone className="h-5 w-5" />}
                     <span className="sr-only">Zavolat {user.name}</span>
                   </Button>
                 </div>

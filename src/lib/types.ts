@@ -14,3 +14,15 @@ export type User = {
 export type GameState = "hraje_se" | "nehraje_se";
 
 export type ActiveApp = null | "admin" | "ai" | "calling";
+
+export type CallStatus = 'pending' | 'answered' | 'declined' | 'ended' | 'none';
+
+export interface Call {
+  id: string;
+  callerId: string;
+  calleeId: string;
+  callerName: string;
+  status: CallStatus;
+  offer?: RTCSessionDescriptionInit;
+  answer?: RTCSessionDescriptionInit;
+}

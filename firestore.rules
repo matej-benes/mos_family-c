@@ -22,5 +22,14 @@ service cloud.firestore {
     match /gameState/{gameStateId} {
       allow read, write: if true;
     }
+
+    // Allow users to create and manage calls
+    match /calls/{callId} {
+      allow read, write: if true; // Insecure, for prototyping
+    }
+    
+    match /calls/{callId}/{candidatesCollection}/{candidateId} {
+       allow read, write: if true; // Insecure, for prototyping
+    }
   }
 }

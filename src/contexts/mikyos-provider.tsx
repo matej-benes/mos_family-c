@@ -1,12 +1,21 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import { createContext, useCallback, useEffect, useState, useMemo } from 'react';
-import type { User, UserRole, GameState, ActiveApp } from '@/lib/types';
+import { createContext, useCallback, useEffect, useState, useMemo, useRef } from 'react';
+import type { User, UserRole, GameState, ActiveApp, Call, CallStatus } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { collection, doc, query, where, onSnapshot, updateDoc, addDoc, getDoc, collectionGroup, writeBatch } from 'firebase/firestore';
 
+// Configuration for the RTCPeerConnection
+const servers = {
+  iceServers: [
+    {
+      urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'],
+    },
+  ],
+  iceCandidatePoolSize: 10,
+};
 
 interface MikyosContextType {
   currentUser: User | null;
@@ -20,6 +29,14 @@ interface MikyosContextType {
   setActiveApp: (app: ActiveApp) => void;
   toggleGameMode: () => void;
   setBedtime: (userId: string, time: string) => void;
+  // WebRTC calling state and functions
+  startCall: (calleeId: string) => void;
+  answerCall: () => void;
+  hangUp: () => void;
+  incomingCall: Call | null;
+  activeCall: Call | null;
+  localStream: MediaStream | null;
+  remoteStream: MediaStream | null;
 }
 
 export const MikyosContext = createContext<MikyosContextType | undefined>(undefined);
@@ -32,6 +49,14 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const firestore = useFirestore();
 
+  // WebRTC State
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [activeCall, setActiveCall] = useState<Call | null>(null);
+  const [incomingCall, setIncomingCall] = useState<Call | null>(null);
+  const peerConnection = useRef<RTCPeerConnection | null>(null);
+
+
   const usersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
   const { data: usersData, isLoading: usersLoading } = useCollection<User>(usersCollection);
 
@@ -41,6 +66,211 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   const users = useMemo(() => usersData || [], [usersData]);
   const gameState = useMemo(() => gameStateData?.mode || 'nehraje_se', [gameStateData]);
   
+  // Listen for incoming calls
+  useEffect(() => {
+    if (!firestore || !currentUser) return;
+
+    const q = query(
+      collection(firestore, 'calls'),
+      where('calleeId', '==', currentUser.id),
+      where('status', '==', 'pending')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        const callDoc = snapshot.docs[0];
+        setIncomingCall({ id: callDoc.id, ...callDoc.data() } as Call);
+      } else {
+        setIncomingCall(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [firestore, currentUser]);
+
+  // Listen for active call updates (answer, hangup)
+  useEffect(() => {
+    if (!firestore || !activeCall) return;
+
+    const unsub = onSnapshot(doc(firestore, 'calls', activeCall.id), (doc) => {
+        const callData = doc.data() as Call;
+        if(callData.status === 'ended' || callData.status === 'declined'){
+            hangUp(true); // cleanup call
+        }
+    });
+
+    return unsub;
+  }, [firestore, activeCall])
+
+  const setupPeerConnection = useCallback((callId: string) => {
+    if (!firestore) return null;
+
+    const pc = new RTCPeerConnection(servers);
+
+    // Push tracks from local stream to peer connection
+    localStream?.getTracks().forEach(track => {
+      pc.addTrack(track, localStream);
+    });
+
+    // Pull tracks from remote stream, add to remote stream
+    const remote = new MediaStream();
+    setRemoteStream(remote);
+    pc.ontrack = (event) => {
+      event.streams[0].getTracks().forEach(track => {
+        remote.addTrack(track);
+      });
+    };
+
+    // Listen for ICE candidates and add them to Firestore
+    const callerCandidatesCollection = collection(firestore, 'calls', callId, 'callerCandidates');
+    const calleeCandidatesCollection = collection(firestore, 'calls', callId, 'calleeCandidates');
+    
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        if(activeCall?.callerId === currentUser?.id) {
+          addDocumentNonBlocking(callerCandidatesCollection, event.candidate.toJSON());
+        } else {
+          addDocumentNonBlocking(calleeCandidatesCollection, event.candidate.toJSON());
+        }
+      }
+    };
+    
+    return pc;
+  }, [localStream, firestore, activeCall, currentUser]);
+
+
+  const startCall = useCallback(async (calleeId: string) => {
+    if (!firestore || !currentUser) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setLocalStream(stream);
+
+      const callDocRef = await addDoc(collection(firestore, 'calls'), {
+        callerId: currentUser.id,
+        calleeId: calleeId,
+        callerName: currentUser.name,
+        status: 'pending',
+      });
+      
+      const callData: Call = { id: callDocRef.id, callerId: currentUser.id, calleeId: calleeId, callerName: currentUser.name, status: 'pending' };
+      setActiveCall(callData);
+
+      peerConnection.current = setupPeerConnection(callDocRef.id);
+      if(!peerConnection.current) return;
+      
+      const offerDescription = await peerConnection.current.createOffer();
+      await peerConnection.current.setLocalDescription(offerDescription);
+
+      const offer = {
+        sdp: offerDescription.sdp,
+        type: offerDescription.type,
+      };
+
+      await updateDoc(callDocRef, { offer });
+
+      // Listen for answer and ICE candidates from callee
+      onSnapshot(doc(firestore, 'calls', callDocRef.id), (snapshot) => {
+        const data = snapshot.data();
+        if (!peerConnection.current?.currentRemoteDescription && data?.answer) {
+          const answerDescription = new RTCSessionDescription(data.answer);
+          peerConnection.current?.setRemoteDescription(answerDescription);
+        }
+      });
+      
+      const calleeCandidatesCollection = collection(firestore, 'calls', callDocRef.id, 'calleeCandidates');
+      onSnapshot(calleeCandidatesCollection, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const candidate = new RTCIceCandidate(change.doc.data());
+            peerConnection.current?.addIceCandidate(candidate);
+          }
+        });
+      });
+
+
+    } catch (error) {
+      console.error('Could not start call:', error);
+      toast({ variant: 'destructive', title: 'Chyba hovoru', description: 'Nepodařilo se získat přístup ke kameře nebo mikrofonu.' });
+    }
+  }, [firestore, currentUser, setupPeerConnection, toast]);
+
+  const answerCall = useCallback(async () => {
+    if (!firestore || !incomingCall) return;
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        setLocalStream(stream);
+
+        const callId = incomingCall.id;
+        peerConnection.current = setupPeerConnection(callId);
+        if(!peerConnection.current) return;
+
+        const callDocRef = doc(firestore, 'calls', callId);
+        const callData = (await getDoc(callDocRef)).data() as Call;
+
+        await peerConnection.current.setRemoteDescription(new RTCSessionDescription(callData.offer!));
+
+        const answerDescription = await peerConnection.current.createAnswer();
+        await peerConnection.current.setLocalDescription(answerDescription);
+
+        const answer = {
+            type: answerDescription.type,
+            sdp: answerDescription.sdp,
+        };
+
+        await updateDoc(callDocRef, { answer, status: 'answered' });
+        
+        setActiveCall({ id: callId, ...incomingCall });
+        setIncomingCall(null);
+
+        // Listen for ICE candidates from caller
+        const callerCandidatesCollection = collection(firestore, 'calls', callId, 'callerCandidates');
+        onSnapshot(callerCandidatesCollection, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === 'added') {
+                    const candidate = new RTCIceCandidate(change.doc.data());
+                    peerConnection.current?.addIceCandidate(candidate);
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error("Could not answer call: ", error);
+        toast({ variant: 'destructive', title: 'Chyba hovoru', description: 'Nepodařilo se přijmout hovor.' });
+    }
+  }, [firestore, incomingCall, setupPeerConnection, toast]);
+
+  const hangUp = useCallback(async (isRemoteHangup = false) => {
+    if (peerConnection.current) {
+        peerConnection.current.getTransceivers().forEach(transceiver => {
+            transceiver.stop();
+        });
+        peerConnection.current.close();
+        peerConnection.current = null;
+    }
+    
+    localStream?.getTracks().forEach(track => track.stop());
+    remoteStream?.getTracks().forEach(track => track.stop());
+
+    setLocalStream(null);
+    setRemoteStream(null);
+    
+    if (activeCall && !isRemoteHangup) {
+      const callDocRef = doc(firestore, 'calls', activeCall.id);
+      await updateDoc(callDocRef, { status: 'ended' });
+    }
+    
+    if (incomingCall && !activeCall) {
+        const callDocRef = doc(firestore, 'calls', incomingCall.id);
+        await updateDoc(callDocRef, { status: 'declined' });
+    }
+
+    setActiveCall(null);
+    setIncomingCall(null);
+  }, [localStream, remoteStream, activeCall, incomingCall, firestore]);
+  
+
   const checkLockState = useCallback(() => {
     if (!currentUser) {
       setIsLocked(true);
@@ -114,6 +344,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     toast({ title: "Odhlášeno", description: "Byli jste odhlášeni." });
     setCurrentUser(null);
     setActiveApp(null);
+    hangUp();
   };
 
   const setBedtime = (userId: string, time: string) => {
@@ -146,6 +377,13 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     setActiveApp,
     toggleGameMode,
     setBedtime,
+    startCall,
+    answerCall,
+    hangUp,
+    incomingCall,
+    activeCall,
+    localStream,
+    remoteStream,
   };
 
   return <MikyosContext.Provider value={value}>{children}</MikyosContext.Provider>;

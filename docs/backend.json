@@ -91,6 +91,28 @@
       "required": [
         "mode"
       ]
+    },
+    "Call": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Call",
+      "type": "object",
+      "description": "Represents a WebRTC call signaling document.",
+      "properties": {
+        "callerId": { "type": "string" },
+        "calleeId": { "type": "string" },
+        "callerName": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "answered", "declined", "ended"] },
+        "offer": { "type": "object" },
+        "answer": { "type": "object" }
+      },
+      "required": ["callerId", "calleeId", "callerName", "status"]
+    },
+    "IceCandidate": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "IceCandidate",
+      "type": "object",
+      "description": "Represents a WebRTC ICE candidate. The schema is flexible as it's defined by the browser's WebRTC implementation.",
+      "properties": {}
     }
   },
   "auth": {
@@ -140,6 +162,39 @@
             "$ref": "#/backend/entities/GameState"
           },
           "description": "Stores the global game state, including the current mode."
+        }
+      },
+      {
+        "path": "/calls/{callId}",
+        "definition": {
+          "entityName": "Call",
+          "schema": { "$ref": "#/backend/entities/Call" },
+          "description": "Stores WebRTC signaling data for calls.",
+           "params": [{ "name": "callId", "description": "The unique identifier for the call." }]
+        }
+      },
+      {
+        "path": "/calls/{callId}/callerCandidates/{candidateId}",
+        "definition": {
+          "entityName": "IceCandidate",
+          "schema": { "$ref": "#/backend/entities/IceCandidate" },
+          "description": "ICE candidates from the caller.",
+          "params": [
+              { "name": "callId", "description": "The unique identifier for the call." },
+              { "name": "candidateId", "description": "The unique identifier for the ICE candidate." }
+            ]
+        }
+      },
+      {
+        "path": "/calls/{callId}/calleeCandidates/{candidateId}",
+        "definition": {
+          "entityName": "IceCandidate",
+          "schema": { "$ref": "#/backend/entities/IceCandidate" },
+          "description": "ICE candidates from the callee.",
+          "params": [
+            { "name": "callId", "description": "The unique identifier for the call." },
+            { "name": "candidateId", "description": "The unique identifier for the ICE candidate." }
+          ]
         }
       }
     ]
