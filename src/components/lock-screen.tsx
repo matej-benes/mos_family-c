@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ShieldBan, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useMikyos } from '@/hooks/use-mikyos';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,15 +23,6 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
       login(username, pin);
     }
   };
-
-  const handleDemoLogin = (role: 'superadmin' | 'starší' | 'mladší') => {
-    let demoUsername = '';
-    if (role === 'superadmin') demoUsername = 'superadmin';
-    if (role === 'starší') demoUsername = 'starsi';
-    if (role === 'mladší') demoUsername = 'mladsi';
-    login(demoUsername, '1234');
-  }
-
 
   if (!isLoginScreen) {
     return (
@@ -87,18 +78,6 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
               <LogIn className="mr-2 h-4 w-4" /> Přihlásit se
             </Button>
         </CardContent>
-        <CardFooter className="flex flex-col gap-2 pt-4 border-t">
-             <p className="text-xs text-muted-foreground">Pro testovací účely:</p>
-            <Button variant="secondary" size="sm" className="w-full" onClick={() => handleDemoLogin('superadmin')}>
-              Login as Super Admin
-            </Button>
-            <Button variant="secondary" size="sm" className="w-full" onClick={() => handleDemoLogin('starší')}>
-              Login as Starší
-            </Button>
-             <Button variant="secondary" size="sm" className="w-full" onClick={() => handleDemoLogin('mladší')}>
-              Login as Mladší
-            </Button>
-        </CardFooter>
       </Card>
     </div>
   );
