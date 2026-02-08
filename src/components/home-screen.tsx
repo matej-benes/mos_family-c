@@ -9,6 +9,13 @@ export function HomeScreen() {
 
   const apps: AppIconProps[] = [
     {
+      id: 'calling',
+      label: 'Telefon',
+      icon: <Phone className="h-8 w-8" />,
+      onClick: () => setActiveApp('calling'),
+      color: 'bg-green-500/20 text-green-500',
+    },
+    {
       id: 'admin',
       label: 'Admin Panel',
       icon: <Shield className="h-8 w-8" />,

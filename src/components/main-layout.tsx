@@ -6,6 +6,7 @@ import { HomeScreen } from '@/components/home-screen';
 import { Header } from '@/components/header';
 import { AdminPanel } from '@/components/admin-panel';
 import { AiPanel } from '@/components/ai-panel';
+import { CallingPanel } from './calling-panel';
 
 export function MainLayout() {
   const { isLocked, lockMessage, activeApp, currentUser } = useMikyos();
@@ -24,6 +25,8 @@ export function MainLayout() {
         return <AdminPanel />;
       case 'ai':
         return <AiPanel />;
+      case 'calling':
+        return <CallingPanel />;
       default:
         return <HomeScreen />;
     }
