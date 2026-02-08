@@ -17,7 +17,7 @@ export type User = {
 
 export type GameState = "hraje_se" | "nehraje_se";
 
-export type ActiveApp = null | "admin" | "ai" | "calling";
+export type ActiveApp = null | "admin" | "calling" | "messaging";
 
 export type CallStatus = 'pending' | 'answered' | 'declined' | 'ended' | 'none';
 
@@ -30,3 +30,23 @@ export interface Call {
   offer?: RTCSessionDescriptionInit;
   answer?: RTCSessionDescriptionInit;
 }
+
+export type Message = {
+  id: string;
+  senderId: string;
+  text: string;
+  timestamp: {
+    seconds: number;
+    nanoseconds: number;
+  } | null;
+};
+
+export type Chat = {
+  id: string;
+  participants: string[];
+  lastMessage?: {
+    text: string;
+    senderId: string;
+    timestamp: any;
+  }
+};

@@ -31,5 +31,12 @@ service cloud.firestore {
     match /calls/{callId}/{candidatesCollection}/{candidateId} {
        allow read, write: if true; // Insecure, for prototyping
     }
+
+    match /chats/{chatId} {
+      allow read, write: if true; // Insecure, for prototyping
+      match /messages/{messageId} {
+        allow read, write: if true; // Insecure, for prototyping
+      }
+    }
   }
 }

@@ -5,9 +5,9 @@ import { LockScreen } from '@/components/lock-screen';
 import { HomeScreen } from '@/components/home-screen';
 import { Header } from '@/components/header';
 import { AdminPanel } from '@/components/admin-panel';
-import { AiPanel } from '@/components/ai-panel';
 import { CallingPanel } from './calling-panel';
 import { CallModal } from './call-modal';
+import { MessagingPanel } from './messaging-panel';
 
 export function MainLayout() {
   const { isLocked, lockMessage, activeApp, currentUser, incomingCall, activeCall } = useMikyos();
@@ -24,8 +24,8 @@ export function MainLayout() {
     switch (activeApp) {
       case 'admin':
         return <AdminPanel />;
-      case 'ai':
-        return <AiPanel />;
+      case 'messaging':
+        return <MessagingPanel />;
       case 'calling':
         return <CallingPanel />;
       default:

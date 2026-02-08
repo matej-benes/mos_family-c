@@ -109,6 +109,41 @@
       "type": "object",
       "description": "Represents a WebRTC ICE candidate. The schema is flexible as it's defined by the browser's WebRTC implementation.",
       "properties": {}
+    },
+    "Chat": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Chat",
+      "type": "object",
+      "description": "Represents a private conversation between two or more users.",
+      "properties": {
+        "participants": {
+          "type": "array",
+          "description": "An array of user IDs participating in the chat.",
+          "items": { "type": "string" }
+        },
+        "lastMessage": {
+          "type": "object",
+          "description": "A summary of the last message for quick display.",
+          "properties": {
+            "text": { "type": "string" },
+            "senderId": { "type": "string" },
+            "timestamp": { "type": "object", "description": "Firestore server timestamp." }
+          }
+        }
+      },
+      "required": ["participants"]
+    },
+    "Message": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Message",
+        "type": "object",
+        "description": "Represents a single message within a chat.",
+        "properties": {
+            "text": { "type": "string" },
+            "senderId": { "type": "string" },
+            "timestamp": { "type": "object", "description": "Firestore server timestamp." }
+        },
+        "required": ["text", "senderId", "timestamp"]
     }
   },
   "auth": {
@@ -192,6 +227,27 @@
             { "name": "candidateId", "description": "The unique identifier for the ICE candidate." }
           ]
         }
+      },
+      {
+        "path": "/chats/{chatId}",
+        "definition": {
+          "entityName": "Chat",
+          "schema": { "$ref": "#/backend/entities/Chat" },
+          "description": "Stores metadata for a chat session.",
+          "params": [{ "name": "chatId", "description": "The unique identifier for the chat." }]
+        }
+      },
+      {
+          "path": "/chats/{chatId}/messages/{messageId}",
+          "definition": {
+              "entityName": "Message",
+              "schema": { "$ref": "#/backend/entities/Message" },
+              "description": "Stores messages for a specific chat.",
+              "params": [
+                  { "name": "chatId", "description": "The unique identifier for the chat." },
+                  { "name": "messageId", "description": "The unique identifier for the message." }
+              ]
+          }
       }
     ]
   }
