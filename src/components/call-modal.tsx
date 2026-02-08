@@ -28,7 +28,7 @@ function VideoPlayer({ stream, muted = false, isLocal = false }: { stream: Media
 
 
 export function CallModal() {
-  const { incomingCall, activeCall, answerCall, hangUp, localStream, remoteStream } = useMikyos();
+  const { incomingCall, activeCall, answerCall, hangUp, localStream, remoteStream, users } = useMikyos();
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
 
@@ -38,6 +38,21 @@ export function CallModal() {
   const isIncoming = !!incomingCall && !activeCall;
   const isOutgoing = !!activeCall && activeCall.status === 'pending';
   const isInCall = !!activeCall && activeCall.status === 'answered';
+
+  const caller = users.find(u => u.id === call.callerId);
+  const callee = users.find(u => u.id === call.calleeId);
+
+  const displayName = isOutgoing ? callee?.name : call.callerName;
+  const displayAvatar = isOutgoing ? callee?.avatarUrl : caller?.avatarUrl;
+  const displayFallback = (displayName || '?').charAt(0);
+  
+  const title = isIncoming 
+    ? `Příchozí hovor od ${call.callerName}` 
+    : isOutgoing 
+    ? `Volám ${callee?.name || '...'}` 
+    : isInCall 
+    ? 'Hovor probíhá' 
+    : '';
 
 
   const toggleMute = () => {
@@ -59,21 +74,17 @@ export function CallModal() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <Card className="w-[90vw] h-[90vh] max-w-4xl max-h-[800px] flex flex-col shadow-2xl">
         <CardHeader className="text-center">
-            <CardTitle className="text-2xl">
-                {isIncoming && `Příchozí hovor od ${call.callerName}`}
-                {isOutgoing && `Volám uživateli...`}
-                {isInCall && 'Hovor probíhá'}
-            </CardTitle>
+            <CardTitle className="text-2xl">{title}</CardTitle>
             <CardDescription>{isOutgoing && 'Čekání na přijetí...'}</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col items-center justify-center gap-4 relative">
             { (isIncoming || isOutgoing) && (
                  <div className="flex flex-col items-center gap-4 animate-pulse">
                     <Avatar className="w-24 h-24">
-                        {/* You might want to fetch the caller's avatar */}
-                        <AvatarFallback className="text-4xl">{call.callerName.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={displayAvatar} />
+                        <AvatarFallback className="text-4xl">{displayFallback}</AvatarFallback>
                     </Avatar>
-                    <p className="text-xl font-bold">{call.callerName}</p>
+                    <p className="text-xl font-bold">{displayName}</p>
                  </div>
             )}
             { isInCall && (
