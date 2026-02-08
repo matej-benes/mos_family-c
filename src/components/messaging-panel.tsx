@@ -41,7 +41,7 @@ export function MessagingPanel() {
     return users.filter(u => u.id !== currentUser.id);
   }, [currentUser, users]);
 
-  const olderSiblings = useMemo(() => users.filter(u => ['starší', 'superadmin'].includes(u.role)), [users]);
+  const olderSiblings = useMemo(() => users.filter(u => u.role === 'starší'), [users]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -143,7 +143,7 @@ export function MessagingPanel() {
                 <Label htmlFor='select-approver' className="text-base font-semibold">1. Vyber, kdo ti komunikaci povolí:</Label>
                 <Select onValueChange={setSelectedApproverId} value={selectedApproverId}>
                   <SelectTrigger id='select-approver' className="mt-2">
-                    <SelectValue placeholder="Vyber staršího sourozence nebo admina" />
+                    <SelectValue placeholder="Vyber staršího sourozence" />
                   </SelectTrigger>
                   <SelectContent>
                     {olderSiblings.map(sibling => (

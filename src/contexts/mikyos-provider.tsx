@@ -414,8 +414,8 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
 
   const approveContactInPerson = async (requesterId: string, targetContactId: string, approverId: string, approverPin: string): Promise<boolean> => {
     const approver = users.find(u => u.id === approverId);
-    if (!approver || !['starší', 'superadmin'].includes(approver.role) || approver.pin !== approverPin) {
-      toast({ variant: 'destructive', title: 'Ověření selhalo', description: 'Neplatný PIN nebo nedostatečná oprávnění.' });
+    if (!approver || approver.role !== 'starší' || approver.pin !== approverPin) {
+      toast({ variant: 'destructive', title: 'Ověření selhalo', description: 'Neplatný PIN nebo oprávnění má pouze role "starší".' });
       return false;
     }
 
