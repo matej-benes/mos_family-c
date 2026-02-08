@@ -105,24 +105,22 @@ export function AdminPanel() {
                         <CardDescription>Spravujte uživatelská nastavení a globální stav hry.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col gap-6 min-h-0">
-                        {currentUser.role === 'superadmin' && (
-                            <div className="flex items-center justify-between p-4 border rounded-lg bg-background">
-                                <div className="flex items-center gap-3">
-                                <Gamepad2 className="h-6 w-6" />
-                                <div>
-                                    <Label htmlFor="game-mode" className="text-base font-semibold">Herní režim</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Aktuálně: <span className="font-bold">{gameState.replace('_', ' ')}</span>
-                                    </p>
-                                </div>
-                                </div>
-                                <Switch
-                                    id="game-mode"
-                                    checked={gameState === 'hraje_se'}
-                                    onCheckedChange={toggleGameMode}
-                                />
+                        <div className="flex items-center justify-between p-4 border rounded-lg bg-background">
+                            <div className="flex items-center gap-3">
+                            <Gamepad2 className="h-6 w-6" />
+                            <div>
+                                <Label htmlFor="game-mode" className="text-base font-semibold">Herní režim</Label>
+                                <p className="text-sm text-muted-foreground">
+                                    Aktuálně: <span className="font-bold">{gameState.replace('_', ' ')}</span>
+                                </p>
                             </div>
-                        )}
+                            </div>
+                            <Switch
+                                id="game-mode"
+                                checked={gameState === 'hraje_se'}
+                                onCheckedChange={toggleGameMode}
+                            />
+                        </div>
                         <div className="flex-1 flex flex-col min-h-0">
                             <h3 className="text-lg font-semibold mb-2">Spravovat uživatele</h3>
                             <ScrollArea className="flex-1 -mr-6 pr-6">

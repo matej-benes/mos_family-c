@@ -37,7 +37,7 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
             </CardTitle>
             <CardDescription>{message}</CardDescription>
             </CardHeader>
-            {currentUser && currentUser.role !== 'superadmin' && (
+            {currentUser && !['superadmin', 'starší'].includes(currentUser.role) && (
                 <CardContent>
                     <Button onClick={logout} variant="outline" className="w-full">
                         <LogOut className="mr-2 h-4 w-4" />

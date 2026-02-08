@@ -308,7 +308,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (currentUser.role === 'superadmin') {
+    if (['superadmin', 'starší'].includes(currentUser.role)) {
       setIsLocked(false);
       return;
     }
@@ -393,8 +393,8 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleGameMode = () => {
-    if (currentUser?.role !== 'superadmin' || !firestore) {
-      toast({ variant: 'destructive', title: "Oprávnění odepřeno", description: "Pouze Super Admin může změnit herní režim." });
+    if (!currentUser || !['superadmin', 'starší'].includes(currentUser.role) || !firestore) {
+      toast({ variant: 'destructive', title: "Oprávnění odepřeno", description: "Pro změnu herního režimu nemáte oprávnění." });
       return;
     }
     const newState = gameState === 'hraje_se' ? 'nehraje_se' : 'hraje_se';
