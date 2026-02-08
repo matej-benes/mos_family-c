@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useMikyos } from '@/hooks/use-mikyos';
 
@@ -27,43 +26,67 @@ export function CallApp() {
   const handleScan = async () => {
     setIsScanning(true);
     setDiscoveredDevices([]);
-    toast({ title: 'Scanning...', description: 'Looking for nearby devices via Web Bluetooth & Geolocation.' });
+    
+    if (!navigator.bluetooth) {
+      toast({ variant: 'destructive', title: 'Chyba', description: 'Web Bluetooth není na tomto zařízení podporován.' });
+      setIsScanning(false);
+      return;
+    }
+    
+    toast({ title: 'Hledám...', description: 'Hledám blízká zařízení pomocí Web Bluetooth.' });
 
     try {
-      // Mocking device discovery
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      
-      // In a real implementation, you'd use:
-      // await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
-      // and geolocation to find nearby peers.
-      
-      const nearbyUsers = users.filter(u => u.role !== 'superadmin').map(u => ({ id: u.id, name: u.name, avatarUrl: u.avatarUrl }));
-      setDiscoveredDevices(nearbyUsers);
-      toast({ title: 'Scan complete!', description: `Found ${nearbyUsers.length} devices nearby.` });
-    } catch (error) {
+      // Otevře dialog pro výběr zařízení v prohlížeči.
+      // Pro reálnou aplikaci by bylo potřeba filtrovat podle specifické UUID služby.
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+      });
+
+      if (device && device.name) {
+        // Pokusíme se najít uživatele podle jména zařízení pro zobrazení avataru
+        const matchedUser = users.find(u => u.name.toLowerCase() === device.name?.toLowerCase());
+        const discovered: DiscoveredDevice = {
+           id: device.id,
+           name: device.name,
+           avatarUrl: matchedUser ? matchedUser.avatarUrl : `https://picsum.photos/seed/${device.id}/100/100`,
+        };
+        setDiscoveredDevices([discovered]);
+        toast({ title: 'Zařízení nalezeno!', description: `Nalezeno ${device.name}.` });
+      } else {
+        toast({ title: 'Hledání dokončeno', description: 'Nebylo vybráno žádné zařízení.' });
+      }
+    } catch (error: any) {
       console.error('Bluetooth scan failed:', error);
-      toast({ variant: 'destructive', title: 'Scan failed', description: 'Could not access Bluetooth. Please check permissions.' });
+      if (error.name === 'NotFoundError') {
+         toast({ title: 'Hledání zrušeno', description: 'Nebyl vybrán žádný přístroj.' });
+      } else {
+         toast({ variant: 'destructive', title: 'Hledání selhalo', description: 'Nelze získat přístup k Bluetooth. Zkontrolujte oprávnění a zapněte Bluetooth.' });
+      }
     } finally {
       setIsScanning(false);
     }
   };
 
   const handleInitiateCall = (device: DiscoveredDevice) => {
+    // V reálné implementaci WebRTC by zde proběhlo navázání peer-to-peer spojení.
+    // To zahrnuje signalizační proces (výměna SDP a ICE kandidátů),
+    // který by pro offline aplikaci musel probíhat přes Bluetooth GATT služby.
+    // Toto je vysoce komplexní úkol. Pro toto demo hovor pouze simulujeme.
     setCallStatus('calling');
     setCallingDevice(device);
-    toast({ title: `Calling ${device.name}...` });
+    toast({ title: `Volám ${device.name}...` });
 
-    // Mock call connection
+    // Simulace spojení hovoru
     setTimeout(() => {
       setCallStatus('in-call');
-      toast({ title: 'Call connected!', description: `You are now talking to ${device.name}.` });
+      toast({ title: 'Hovor spojen!', description: `Právě mluvíte s ${device.name}.` });
     }, 3000);
   };
 
   const handleEndCall = () => {
     setCallStatus('idle');
     setCallingDevice(null);
-    toast({ title: 'Call ended' });
+    toast({ title: 'Hovor ukončen' });
   };
   
   if(callStatus === 'calling' || callStatus === 'in-call') {
@@ -75,7 +98,7 @@ export function CallApp() {
         </Avatar>
         <CardTitle className="text-3xl font-bold mb-2">{callingDevice?.name}</CardTitle>
         <CardDescription className="text-lg mb-6">
-            {callStatus === 'calling' ? 'Connecting...' : 'Connected'}
+            {callStatus === 'calling' ? 'Spojuji...' : 'Spojeno'}
         </CardDescription>
         <Button size="lg" variant="destructive" onClick={handleEndCall} className="rounded-full h-16 w-16 p-0">
             <PhoneOff className="h-8 w-8" />
@@ -88,19 +111,19 @@ export function CallApp() {
     <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Phone /> Offline P2P Calling
+          <Phone /> Offline P2P volání
         </CardTitle>
         <CardDescription>
-          Call other devices directly without an internet connection using WebRTC and Bluetooth.
+          Volejte ostatním zařízením přímo bez připojení k internetu. Aplikace využívá Web Bluetooth pro nalezení zařízení. Samotný hovor je simulován.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
         <Button onClick={handleScan} disabled={isScanning} size="lg">
           {isScanning ? <CircleDotDashed className="mr-2 h-5 w-5 animate-spin" /> : <Bluetooth className="mr-2 h-5 w-5" />}
-          {isScanning ? 'Scanning for Devices...' : 'Scan for Nearby Devices'}
+          {isScanning ? 'Hledám zařízení...' : 'Hledat zařízení v okolí'}
         </Button>
         <div className="flex-1 flex flex-col min-h-0">
-          <h3 className="font-semibold mb-2 text-foreground/80">Discovered Devices</h3>
+          <h3 className="font-semibold mb-2 text-foreground/80">Nalezená zařízení</h3>
           <ScrollArea className="flex-1 border rounded-lg p-2 bg-background">
             {discoveredDevices.length > 0 ? (
               <div className="space-y-2">
@@ -121,7 +144,7 @@ export function CallApp() {
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
-                <p>{isScanning ? 'Searching...' : 'No devices found yet. Try scanning!'}</p>
+                <p>{isScanning ? 'Hledám...' : 'Zatím žádná zařízení nenalezena. Zkuste hledat!'}</p>
               </div>
             )}
           </ScrollArea>

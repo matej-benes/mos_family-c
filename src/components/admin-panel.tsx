@@ -18,8 +18,8 @@ export function AdminPanel() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Access Denied</CardTitle>
-          <CardDescription>You do not have permission to view this page.</CardDescription>
+          <CardTitle>Přístup odepřen</CardTitle>
+          <CardDescription>Pro zobrazení této stránky nemáte oprávnění.</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -33,16 +33,16 @@ export function AdminPanel() {
     <Tabs defaultValue="users" className="h-full flex flex-col">
        <div className="flex-shrink-0">
         <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="users"><Users className="mr-2 h-4 w-4" />Users & Game</TabsTrigger>
-            <TabsTrigger value="approvals"><ShieldCheck className="mr-2 h-4 w-4" />Approvals</TabsTrigger>
+            <TabsTrigger value="users"><Users className="mr-2 h-4 w-4" />Uživatelé a Hra</TabsTrigger>
+            <TabsTrigger value="approvals"><ShieldCheck className="mr-2 h-4 w-4" />Schvalování</TabsTrigger>
         </TabsList>
        </div>
        <div className="flex-1 mt-4 min-h-0">
             <TabsContent value="users" className="h-full m-0">
                 <Card className="h-full flex flex-col">
                     <CardHeader>
-                        <CardTitle>Users & Game Management</CardTitle>
-                        <CardDescription>Manage user settings and global game state.</CardDescription>
+                        <CardTitle>Správa uživatelů a hry</CardTitle>
+                        <CardDescription>Spravujte uživatelská nastavení a globální stav hry.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col gap-6 min-h-0">
                         {currentUser.role === 'superadmin' && (
@@ -50,9 +50,9 @@ export function AdminPanel() {
                                 <div className="flex items-center gap-3">
                                 <Gamepad2 className="h-6 w-6" />
                                 <div>
-                                    <Label htmlFor="game-mode" className="text-base font-semibold">Game Mode</Label>
+                                    <Label htmlFor="game-mode" className="text-base font-semibold">Herní režim</Label>
                                     <p className="text-sm text-muted-foreground">
-                                        Currently: <span className="font-bold">{gameState.replace('_', ' ')}</span>
+                                        Aktuálně: <span className="font-bold">{gameState.replace('_', ' ')}</span>
                                     </p>
                                 </div>
                                 </div>
@@ -64,7 +64,7 @@ export function AdminPanel() {
                             </div>
                         )}
                         <div className="flex-1 flex flex-col min-h-0">
-                            <h3 className="text-lg font-semibold mb-2">Manage Users</h3>
+                            <h3 className="text-lg font-semibold mb-2">Spravovat uživatele</h3>
                             <ScrollArea className="flex-1 -mr-6 pr-6">
                                 <div className="space-y-4">
                                 {users.filter(u => u.role !== 'superadmin').map(user => (
@@ -86,7 +86,7 @@ export function AdminPanel() {
                                         defaultValue={user.bedtime}
                                         onChange={(e) => handleBedtimeChange(user.id, e.target.value)}
                                         className="w-full sm:w-auto"
-                                        aria-label={`Bedtime for ${user.name}`}
+                                        aria-label={`Večerka pro ${user.name}`}
                                         />
                                     </div>
                                     </div>
@@ -100,11 +100,11 @@ export function AdminPanel() {
             <TabsContent value="approvals" className="h-full m-0">
                 <Card className="h-full">
                     <CardHeader>
-                        <CardTitle>App & Contact Approvals</CardTitle>
-                        <CardDescription>This feature is coming soon.</CardDescription>
+                        <CardTitle>Schvalování aplikací a kontaktů</CardTitle>
+                        <CardDescription>Tato funkce bude brzy k dispozici.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-muted-foreground">Functionality for approving apps and contacts for 'mladší' users will be available here.</p>
+                        <p className="text-muted-foreground">Funkce pro schvalování aplikací a kontaktů pro 'mladší' uživatele bude k dispozici zde.</p>
                     </CardContent>
                 </Card>
             </TabsContent>

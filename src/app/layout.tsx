@@ -7,7 +7,7 @@ import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'MikyOS Family Connect',
-  description: 'Offline OS-like PWA pro rodinnou hru: volání bez WiFi, sourozenecké kontroly, večerka, game mode.',
+  description: 'Offline OS-like PWA pro rodinnou hru: volání bez WiFi, sourozenecké kontroly, večerka, herní režim.',
 };
 
 export default function RootLayout({
@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="cs" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

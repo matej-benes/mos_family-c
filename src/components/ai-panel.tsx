@@ -21,8 +21,8 @@ export function AiPanel() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Access Denied</CardTitle>
-          <CardDescription>You do not have permission to use the AI Studio.</CardDescription>
+          <CardTitle>Přístup odepřen</CardTitle>
+          <CardDescription>Nemáte oprávnění používat AI Studio.</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -30,7 +30,7 @@ export function AiPanel() {
 
   const handleGenerate = async () => {
     if (!description.trim()) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Please enter a description for the UI.' });
+      toast({ variant: 'destructive', title: 'Chyba', description: 'Zadejte prosím popis pro UI.' });
       return;
     }
     setIsLoading(true);
@@ -38,10 +38,10 @@ export function AiPanel() {
     try {
       const result = await generateUIFromDescription({ description });
       setGeneratedCode(result.uiCode);
-      toast({ title: 'UI Generated!', description: 'The AI has generated your component code.' });
+      toast({ title: 'UI vygenerováno!', description: 'AI vygenerovala kód vaší komponenty.' });
     } catch (error) {
       console.error('UI Generation failed:', error);
-      toast({ variant: 'destructive', title: 'Generation Failed', description: 'An error occurred while generating the UI.' });
+      toast({ variant: 'destructive', title: 'Generování selhalo', description: 'Při generování UI došlo k chybě.' });
     } finally {
       setIsLoading(false);
     }
@@ -49,44 +49,44 @@ export function AiPanel() {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedCode);
-    toast({ title: 'Copied to Clipboard!' });
+    toast({ title: 'Zkopírováno do schránky!' });
   };
 
   return (
     <div className="h-full flex flex-col lg:flex-row gap-6">
       <Card className="lg:w-1/3 flex-shrink-0 flex flex-col">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Wand2 /> AI UI Generator</CardTitle>
-          <CardDescription>Describe the UI you want to build, and the AI will generate the React/TypeScript code.</CardDescription>
+          <CardTitle className="flex items-center gap-2"><Wand2 /> AI Generátor UI</CardTitle>
+          <CardDescription>Popište UI, které chcete vytvořit, a AI vygeneruje kód v React/TypeScript.</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col gap-4">
           <Textarea
-            placeholder="e.g., A user profile card with an avatar, name, and a 'View Profile' button."
+            placeholder="např. Karta profilu uživatele s avatarem, jménem a tlačítkem 'Zobrazit profil'."
             className="flex-1 text-base"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
           <Button onClick={handleGenerate} disabled={isLoading} size="lg">
             {isLoading ? <CircleDotDashed className="mr-2 h-5 w-5 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
-            {isLoading ? 'Generating...' : 'Generate UI'}
+            {isLoading ? 'Generuji...' : 'Generovat UI'}
           </Button>
         </CardContent>
       </Card>
       <Card className="flex-1 flex flex-col">
         <CardHeader>
-          <CardTitle>Generated Code</CardTitle>
-          <CardDescription>The generated component code will appear here. Copy and use it in your project.</CardDescription>
+          <CardTitle>Vygenerovaný kód</CardTitle>
+          <CardDescription>Zde se objeví vygenerovaný kód komponenty. Zkopírujte ho a použijte ve svém projektu.</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 relative min-h-0">
           <ScrollArea className="h-full w-full rounded-md border bg-background">
              {generatedCode && (
               <Button size="sm" variant="ghost" className="absolute top-3 right-3 z-10" onClick={copyToClipboard}>
                 <Copy className="h-4 w-4 mr-2" />
-                Copy
+                Kopírovat
               </Button>
             )}
             <pre className="p-4 text-sm whitespace-pre-wrap">
-              <code>{isLoading ? 'Generating code, please wait...' : (generatedCode || 'Code will be displayed here.')}</code>
+              <code>{isLoading ? 'Generuji kód, čekejte prosím...' : (generatedCode || 'Kód se zobrazí zde.')}</code>
             </pre>
           </ScrollArea>
         </CardContent>

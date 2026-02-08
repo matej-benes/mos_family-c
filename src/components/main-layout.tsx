@@ -12,7 +12,7 @@ export function MainLayout() {
   const { isLocked, lockMessage, activeApp, currentUser } = useMikyos();
 
   if (!currentUser) {
-    return <LockScreen message="Please log in to continue." isLoginScreen />;
+    return <LockScreen message="Pro pokračování se prosím přihlaste." isLoginScreen />;
   }
 
   if (isLocked) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { ShieldBan, LogIn } from 'lucide-react';
+import { ShieldBan, LogIn, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useMikyos } from '@/hooks/use-mikyos';
@@ -14,7 +14,7 @@ interface LockScreenProps {
 }
 
 export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) {
-  const { login } = useMikyos();
+  const { login, currentUser, logout } = useMikyos();
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
 
@@ -33,10 +33,18 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
                 <ShieldBan className="h-10 w-10" />
             </div>
             <CardTitle className="font-headline text-2xl">
-                System Locked
+                Systém uzamčen
             </CardTitle>
             <CardDescription>{message}</CardDescription>
             </CardHeader>
+            {currentUser && currentUser.role !== 'superadmin' && (
+                <CardContent>
+                    <Button onClick={logout} variant="outline" className="w-full">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Odhlásit se
+                    </Button>
+                </CardContent>
+            )}
         </Card>
         </div>
     );

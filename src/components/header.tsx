@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Home, LogOut, Moon, Sun, UserCircle } from 'lucide-react';
+import { Home, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMikyos } from '@/hooks/use-mikyos';
 import {
@@ -37,7 +37,7 @@ export function Header() {
           variant="ghost"
           size="icon"
           onClick={() => setActiveApp(null)}
-          aria-label="Go to Home Screen"
+          aria-label="Přejít na domovskou obrazovku"
         >
           <Home className="h-5 w-5" />
         </Button>
@@ -70,7 +70,7 @@ export function Header() {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
+                <span>Odhlásit se</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

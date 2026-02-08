@@ -10,7 +10,7 @@ export function HomeScreen() {
   const apps: AppIconProps[] = [
     {
       id: 'call',
-      label: 'Offline Call',
+      label: 'Offline volání',
       icon: <Phone className="h-8 w-8" />,
       onClick: () => setActiveApp('call'),
       color: 'bg-green-500/20 text-green-500',
@@ -33,7 +33,7 @@ export function HomeScreen() {
     },
     {
       id: 'game1',
-      label: 'Cool Game',
+      label: 'Super Hra',
       icon: <Gamepad2 className="h-8 w-8" />,
       onClick: () => {},
       color: 'bg-blue-500/20 text-blue-500',

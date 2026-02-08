@@ -44,7 +44,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   const checkLockState = useCallback(() => {
     if (!currentUser) {
       setIsLocked(true);
-      setLockMessage('Please log in to continue.');
+      setLockMessage('Pro pokračování se prosím přihlaste.');
       return;
     }
 
@@ -55,7 +55,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
 
     if (gameState === 'nehraje_se') {
       setIsLocked(true);
-      setLockMessage('Game is not active. Please wait for the Super Admin.');
+      setLockMessage('Hra není aktivní. Počkejte prosím na Super Admina.');
       return;
     }
 
@@ -72,7 +72,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
         || currentHours < 6
       ) {
         setIsLocked(true);
-        setLockMessage('It\'s past your bedtime! The OS is locked until morning.');
+        setLockMessage('Je po tvé večerce! Systém je zamčený až do rána.');
         return;
       }
     }
@@ -106,12 +106,12 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
       setActiveApp(null);
       toast({ title: `Vítej, ${userToLogin.name}!`, description: "Jsi přihlášen." });
     } else {
-        toast({ variant: 'destructive', title: "Login Failed", description: "Invalid username or PIN." });
+        toast({ variant: 'destructive', title: "Přihlášení selhalo", description: "Neplatné uživatelské jméno nebo PIN." });
     }
   };
 
   const logout = () => {
-    toast({ title: "Logged Out", description: "You have been logged out." });
+    toast({ title: "Odhlášeno", description: "Byli jste odhlášeni." });
     setCurrentUser(null);
     setActiveApp(null);
   };
@@ -120,18 +120,18 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     if (!firestore) return;
     const userDocRef = doc(firestore, 'users', userId);
     updateDocumentNonBlocking(userDocRef, { bedtime: time });
-    toast({ title: "Bedtime Updated", description: `Bedtime for user has been requested.` });
+    toast({ title: "Večerka aktualizována", description: `Požadavek na změnu večerky pro uživatele byl odeslán.` });
   };
   
   const toggleGameMode = () => {
     if (currentUser?.role !== 'superadmin' || !firestore) {
-      toast({ variant: 'destructive', title: "Permission Denied", description: "Only Super Admin can change the game mode." });
+      toast({ variant: 'destructive', title: "Oprávnění odepřeno", description: "Pouze Super Admin může změnit herní režim." });
       return;
     }
     const newState = gameState === 'hraje_se' ? 'nehraje_se' : 'hraje_se';
     const gameStateRef = doc(firestore, 'gameState', 'global');
     setDocumentNonBlocking(gameStateRef, { mode: newState }, { merge: true });
-    toast({ title: "Game Mode Changed", description: `Game is now ${newState.replace('_', ' ')}.` });
+    toast({ title: "Herní režim změněn", description: `Hra je nyní ${newState.replace('_', ' ')}.` });
   }
 
   const value = {
