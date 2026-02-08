@@ -20,6 +20,7 @@ const servers = {
 interface MikyosContextType {
   currentUser: User | null;
   deviceUser: User | null;
+  deviceId: string | null;
   users: User[];
   gameState: GameState;
   activeApp: ActiveApp;
@@ -398,6 +399,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     currentUser,
     users,
     deviceUser,
+    deviceId,
     gameState,
     activeApp,
     isLocked,

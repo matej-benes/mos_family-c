@@ -15,7 +15,7 @@ interface LockScreenProps {
 }
 
 export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) {
-  const { login, currentUser, logout, deviceUser } = useMikyos();
+  const { login, currentUser, logout, deviceUser, deviceId } = useMikyos();
   const [pin, setPin] = useState('');
 
   const handleLogin = () => {
@@ -89,12 +89,28 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
                 <ShieldBan className="h-10 w-10" />
               </div>
               <CardTitle className="font-headline text-2xl">
-                Zařízení nenalezeno
+                Neregistrované zařízení
               </CardTitle>
               <CardDescription>
-                Toto zařízení není přiřazeno žádnému uživateli. Obraťte se prosím na administrátora.
+                Toto zařízení není přiřazeno žádnému uživateli. Pro aktivaci použijte níže uvedené ID.
               </CardDescription>
             </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+                <div className="space-y-2 text-center">
+                    <Label htmlFor="deviceId" className="text-muted-foreground">ID tohoto zařízení</Label>
+                    <Input
+                      id="deviceId"
+                      type="text"
+                      readOnly
+                      value={deviceId || 'Načítání...'}
+                      className="text-center font-mono text-sm"
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
+                    />
+                    <p className="text-xs text-muted-foreground px-4">
+                        Zkopírujte toto ID a v administraci ho přidejte do seznamu zařízení pro požadovaného uživatele.
+                    </p>
+                </div>
+            </CardContent>
           </>
         )}
       </Card>
