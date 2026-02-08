@@ -6,10 +6,6 @@
       "type": "object",
       "description": "Represents a user within the MikyOS Family Connect application.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity."
-        },
         "username": {
           "type": "string",
           "description": "The user's username for logging in."
@@ -25,14 +21,29 @@
         "deviceId": {
           "type": "string",
           "description": "The ID of the device the user is associated with. (Relationship: User 1:1 Device)"
+        },
+        "name": {
+            "type": "string",
+            "description": "The display name of the user."
+        },
+        "avatarUrl": {
+            "type": "string",
+            "description": "URL for the user's avatar image."
+        },
+        "dataAiHint": {
+            "type": "string",
+            "description": "Hint for AI image generation for the avatar."
+        },
+        "bedtime": {
+            "type": "string",
+            "description": "Bedtime for the user in HH:mm format."
         }
       },
       "required": [
-        "id",
         "username",
         "pin",
         "role",
-        "deviceId"
+        "name"
       ]
     },
     "Device": {
@@ -72,29 +83,18 @@
       "type": "object",
       "description": "Represents the current game state of the application.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the GameState entity. Should always be 'global'."
-        },
         "mode": {
           "type": "string",
           "description": "The current game mode ('hraje_se' or 'nehraje_se')."
-        },
-        "superadminId": {
-          "type": "string",
-          "description": "Reference to User who is the superadmin. (Relationship: User 1:1 GameState)"
         }
       },
       "required": [
-        "id",
-        "mode",
-        "superadminId"
+        "mode"
       ]
     }
   },
   "auth": {
     "providers": [
-      "password",
       "anonymous"
     ]
   },
@@ -107,7 +107,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user information, including username, PIN (consider hashing!), role, and associated deviceId.  Includes denormalized 'deviceId' for authorization independence.",
+          "description": "Stores user information, including username, PIN (consider hashing!), role, and associated deviceId.",
           "params": [
             {
               "name": "userId",
@@ -123,7 +123,7 @@
           "schema": {
             "$ref": "#/backend/entities/Device"
           },
-          "description": "Stores device information, including role, bedtime, and approved apps/contacts. Includes denormalized 'deviceId' for authorization independence.",
+          "description": "Stores device information, including role, bedtime, and approved apps/contacts.",
           "params": [
             {
               "name": "deviceId",
@@ -133,22 +133,15 @@
         }
       },
       {
-        "path": "/gameState/{gameStateId}",
+        "path": "/gameState/global",
         "definition": {
           "entityName": "GameState",
           "schema": {
             "$ref": "#/backend/entities/GameState"
           },
-          "description": "Stores the global game state, including the current mode and the superadmin's user ID.",
-          "params": [
-            {
-              "name": "gameStateId",
-              "description": "The identifier for the game state document, which should always be 'global'."
-            }
-          ]
+          "description": "Stores the global game state, including the current mode."
         }
       }
-    ],
-    "reasoning": "This Firestore structure prioritizes security and simplicity for the MikyOS Family Connect application, specifically addressing the need for custom authentication via username and PIN, and the role-based access control requirements.  It avoids using Firebase Authentication's built-in features and instead manages authentication entirely within Firestore documents. This approach necessitates careful consideration for security rules to prevent unauthorized access.\n\n**Authorization Independence:**  The design emphasizes authorization independence to ensure that security rules can be evaluated efficiently and without complex `get()` calls. This is achieved through:\n\n*   **Denormalization of `deviceId`:**  The `deviceId` is present in both the `/users/{userId}` and `/devices/{deviceId}` collections. This duplication allows rules to verify device ownership without needing to read from the `/users/{userId}` document when accessing a `/devices/{deviceId}` document. This is especially important for the core feature of setting a `bedtime` for a `device` by a `starší` user.\n\n**Structural Segregation & QAPs:**\n\n*   The structure segregates user data (`/users/{userId}`) from device data (`/devices/{deviceId}`) which reduces the risk of unintended data exposure.  This separation enables straightforward `list` operations based on device roles or user roles, as data with differing access requirements are stored in distinct collections, enabling simpler and more robust security rules.\n*   The `/gameState` collection is a singleton (single document with `id = 'global'`) which simplifies reading and writing the global game state. The rules ensure that only the `superadmin` can modify the game state.\n\n**Membership Map Pattern is not used:**  This design uses the more straightforward approach of referencing `deviceId` in the `/users/{userId}` document to establish ownership instead of a membership map. This reduces complexity. However, a future iteration may need to switch to a membership map if more complex authorization scenarios are introduced.\n\n**Invariants:** The design supports invariants by enforcing clear ownership via `deviceId` and `superadminId`, preventing data inconsistencies."
+    ]
   }
 }

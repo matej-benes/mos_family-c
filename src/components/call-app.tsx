@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MOCK_USERS } from '@/lib/mock-data';
+import { useMikyos } from '@/hooks/use-mikyos';
 
 interface DiscoveredDevice {
   id: string;
@@ -17,6 +17,7 @@ interface DiscoveredDevice {
 }
 
 export function CallApp() {
+  const { users } = useMikyos();
   const [isScanning, setIsScanning] = useState(false);
   const [discoveredDevices, setDiscoveredDevices] = useState<DiscoveredDevice[]>([]);
   const [callStatus, setCallStatus] = useState<'idle' | 'calling' | 'in-call'>('idle');
@@ -36,7 +37,7 @@ export function CallApp() {
       // await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
       // and geolocation to find nearby peers.
       
-      const nearbyUsers = MOCK_USERS.filter(u => u.role !== 'superadmin').map(u => ({ id: u.id, name: u.name, avatarUrl: u.avatarUrl }));
+      const nearbyUsers = users.filter(u => u.role !== 'superadmin').map(u => ({ id: u.id, name: u.name, avatarUrl: u.avatarUrl }));
       setDiscoveredDevices(nearbyUsers);
       toast({ title: 'Scan complete!', description: `Found ${nearbyUsers.length} devices nearby.` });
     } catch (error) {

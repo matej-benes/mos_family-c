@@ -1,10 +1,12 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import { createContext, useCallback, useEffect, useState } from 'react';
+import { createContext, useCallback, useEffect, useState, useMemo } from 'react';
 import type { User, UserRole, GameState, ActiveApp } from '@/lib/types';
-import { MOCK_USERS } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+
 
 interface MikyosContextType {
   currentUser: User | null;
@@ -13,7 +15,7 @@ interface MikyosContextType {
   activeApp: ActiveApp;
   isLocked: boolean;
   lockMessage: string;
-  login: (role: UserRole) => void;
+  login: (username: string, pin: string) => void;
   logout: () => void;
   setActiveApp: (app: ActiveApp) => void;
   toggleGameMode: () => void;
@@ -22,14 +24,67 @@ interface MikyosContextType {
 
 export const MikyosContext = createContext<MikyosContextType | undefined>(undefined);
 
+const DEMO_USERS: Omit<User, 'id'>[] = [
+    {
+      name: 'Super Admin',
+      username: 'superadmin',
+      pin: '1234',
+      role: 'superadmin',
+      avatarUrl: 'https://picsum.photos/seed/1/100/100',
+      dataAiHint: 'person portrait',
+    },
+    {
+      name: 'Starší Sibling',
+      username: 'starsi',
+      pin: '1234',
+      role: 'starší',
+      bedtime: '22:00',
+      avatarUrl: 'https://picsum.photos/seed/2/100/100',
+      dataAiHint: 'teenager portrait',
+    },
+    {
+      name: 'Mladší Sibling',
+      username: 'mladsi',
+      pin: '1234',
+      role: 'mladší',
+      bedtime: '20:30',
+      avatarUrl: 'https://picsum.photos/seed/3/100/100',
+      dataAiHint: 'child portrait',
+    },
+];
+
 export function MikyosProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
-  const [gameState, setGameState] = useState<GameState>('nehraje_se');
   const [activeApp, setActiveApp] = useState<ActiveApp>(null);
   const [isLocked, setIsLocked] = useState<boolean>(true);
   const [lockMessage, setLockMessage] = useState<string>('');
   const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const usersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
+  const { data: usersData, isLoading: usersLoading } = useCollection<User>(usersCollection);
+
+  const gameStateDoc = useMemoFirebase(() => firestore ? doc(firestore, 'gameState', 'global') : null, [firestore]);
+  const { data: gameStateData, isLoading: gameStateLoading } = useDoc<{mode: GameState}>(gameStateDoc);
+
+  const users = useMemo(() => usersData || [], [usersData]);
+  const gameState = useMemo(() => gameStateData?.mode || 'nehraje_se', [gameStateData]);
+  
+  // Seed database with demo data if it's empty
+  useEffect(() => {
+    if (firestore && !usersLoading && users.length === 0) {
+      console.log("No users found, seeding database with demo data...");
+      const gameStateRef = doc(firestore, 'gameState', 'global');
+      setDocumentNonBlocking(gameStateRef, { mode: 'nehraje_se' }, { merge: true });
+
+      DEMO_USERS.forEach(user => {
+        const userRef = doc(collection(firestore, 'users'));
+        setDocumentNonBlocking(userRef, user, { merge: true });
+      });
+       toast({ title: "Demo users created", description: "Database has been seeded with test users." });
+    }
+  }, [firestore, users, usersLoading]);
+
 
   const checkLockState = useCallback(() => {
     if (!currentUser) {
@@ -73,14 +128,30 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     checkLockState();
-  }, [currentUser, gameState, checkLockState]);
+    // Re-check every minute
+    const interval = setInterval(checkLockState, 60000);
+    return () => clearInterval(interval);
+  }, [checkLockState]);
 
-  const login = (role: UserRole) => {
-    const userToLogin = users.find(u => u.role === role);
+  // Update current user details if they change in the database
+  useEffect(() => {
+    if (currentUser) {
+        const liveUser = users.find(u => u.id === currentUser.id);
+        if (liveUser) {
+            setCurrentUser(liveUser);
+        }
+    }
+  }, [users, currentUser]);
+
+
+  const login = (username: string, pin: string) => {
+    const userToLogin = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.pin === pin);
     if (userToLogin) {
       setCurrentUser(userToLogin);
       setActiveApp(null);
       toast({ title: "Logged In", description: `Welcome, ${userToLogin.name}!` });
+    } else {
+        toast({ variant: 'destructive', title: "Login Failed", description: "Invalid username or PIN." });
     }
   };
 
@@ -91,26 +162,21 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   };
 
   const setBedtime = (userId: string, time: string) => {
-    setUsers(prevUsers =>
-      prevUsers.map(u => (u.id === userId ? { ...u, bedtime: time } : u))
-    );
-    // Also update current user if it's them
-    if (currentUser?.id === userId) {
-      setCurrentUser(prev => prev ? { ...prev, bedtime: time } : null);
-    }
-    toast({ title: "Bedtime Updated", description: `Bedtime set to ${time} for user.` });
+    if (!firestore) return;
+    const userDocRef = doc(firestore, 'users', userId);
+    updateDocumentNonBlocking(userDocRef, { bedtime: time });
+    toast({ title: "Bedtime Updated", description: `Bedtime for user has been requested.` });
   };
   
   const toggleGameMode = () => {
-    if (currentUser?.role !== 'superadmin') {
+    if (currentUser?.role !== 'superadmin' || !firestore) {
       toast({ variant: 'destructive', title: "Permission Denied", description: "Only Super Admin can change the game mode." });
       return;
     }
-    setGameState(prev => {
-      const newState = prev === 'hraje_se' ? 'nehraje_se' : 'hraje_se';
-      toast({ title: "Game Mode Changed", description: `Game is now ${newState.replace('_', ' ')}.` });
-      return newState;
-    });
+    const newState = gameState === 'hraje_se' ? 'nehraje_se' : 'hraje_se';
+    const gameStateRef = doc(firestore, 'gameState', 'global');
+    setDocumentNonBlocking(gameStateRef, { mode: newState }, { merge: true });
+    toast({ title: "Game Mode Changed", description: `Game is now ${newState.replace('_', ' ')}.` });
   }
 
   const value = {
