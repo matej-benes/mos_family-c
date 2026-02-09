@@ -244,22 +244,45 @@ export function MessagingPanel() {
       </CardHeader>
       <CardContent className="flex-1 min-h-0">
           <ScrollArea className="h-full -mr-6 pr-6">
-              <div className="space-y-2">
-                   {contacts.map(user => {
-                      const canStartConversation = ['starší', 'ostatní', 'superadmin'].includes(currentUser.role) || (currentUser.approvals?.contacts || []).includes(user.id);
-                      
-                      return (
-                      <button key={user.id} onClick={() => handleContactClick(user)} className="flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-accent transition-colors">
-                           <Avatar><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
-                          <div className="flex-1">
-                              <p className="font-semibold">{user.name}</p>
-                              <p className={cn("text-sm", canStartConversation ? "text-muted-foreground" : "text-blue-500 font-medium")}>{canStartConversation ? 'Zahájit konverzaci' : 'Požádat o schválení'}</p>
-                          </div>
-                          {canStartConversation ? <MessageSquare className="h-5 w-5 text-muted-foreground" /> : <Lock className="h-5 w-5 text-blue-500" />}
-                      </button>
-                   )})}
-                   {contacts.length === 0 && <p className="text-muted-foreground text-center py-8">Nejsou zde žádní další uživatelé.</p>}
-              </div>
+            <div className="space-y-2">
+              {contacts.map(user => {
+                // Definice, zda má aktuální uživatel právo psát tomuto kontaktu
+                const isPrivilegedRole = ['starší', 'ostatní', 'superadmin'].includes(currentUser.role);
+                const isApproved = (currentUser.approvals?.contacts || []).includes(user.id);
+                const canStartConversation = isPrivilegedRole || isApproved;
+                
+                return (
+                  <button 
+                    key={user.id} 
+                    onClick={() => handleContactClick(user)} 
+                    className="flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-accent transition-colors"
+                  >
+                    <Avatar>
+                      <AvatarImage src={user.avatarUrl} />
+                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="font-semibold">{user.name}</p>
+                      <p className={cn(
+                        "text-sm", 
+                        canStartConversation ? "text-muted-foreground" : "text-blue-500 font-medium"
+                      )}>
+                        {canStartConversation ? 'Zahájit konverzaci' : 'Požádat o schválení'}
+                      </p>
+                    </div>
+                    {/* Ikona se mění podle oprávnění */}
+                    {canStartConversation ? (
+                      <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                      <Lock className="h-5 w-5 text-blue-500" />
+                    )}
+                  </button>
+                );
+              })}
+              {contacts.length === 0 && (
+                <p className="text-muted-foreground text-center py-8">Nejsou zde žádní další uživatelé.</p>
+              )}
+            </div>
           </ScrollArea>
       </CardContent>
     </Card>
