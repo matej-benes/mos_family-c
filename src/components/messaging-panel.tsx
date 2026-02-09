@@ -92,25 +92,33 @@ export function MessagingPanel() {
   };
 
   const handleContactClick = (user: User) => {
-    // New rule: "ostatní" cannot initiate with "mladší"
-    if (currentUser && currentUser.role === 'ostatní' && user.role === 'mladší') {
+    if (!currentUser) return;
+
+    // RULE 1: 'starší' can always start a conversation. This is the highest priority.
+    if (currentUser.role === 'starší') {
+      setChattingWith(user);
+      return;
+    }
+
+    // RULE 2: 'ostatní' cannot *initiate* with 'mladší'.
+    if (currentUser.role === 'ostatní' && user.role === 'mladší') {
       toast({
         title: 'Komunikace omezena',
         description: `Pro zahájení konverzace tě musí ${user.name} mít ve schválených kontaktech a napsat jako první.`,
         duration: 5000,
       });
-      return; // Stop further action
+      return;
     }
 
-    const canMessageWithoutApproval = currentUser && currentUser.role === 'starší';
+    // RULE 3 (Default): For all others ('mladší' and 'ostatní' talking to non-'mladší'), check for approval.
     const isContactApproved = approvedContactIds.includes(user.id);
-    
-    if (canMessageWithoutApproval || isContactApproved) {
+    if (isContactApproved) {
       setChattingWith(user);
     } else {
       setRequestingApprovalFor(user);
     }
   };
+
 
   const handleCancelRequest = () => {
     setRequestingApprovalFor(null);
@@ -265,10 +273,10 @@ export function MessagingPanel() {
                           );
                       }
                       
-                      // Existing logic for everyone else
-                      const canMessageWithoutApproval = currentUser.role === 'starší';
-                      const isContactApproved = approvedContactIds.includes(user.id);
-                      const canStartConversation = canMessageWithoutApproval || isContactApproved;
+                      // Logic for everyone else.
+                      // 'starší' always can, others need approval.
+                      const canStartConversation = currentUser.role === 'starší' || approvedContactIds.includes(user.id);
+                      
                       return (
                       <button key={user.id} onClick={() => handleContactClick(user)} className="flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-accent transition-colors">
                            <Avatar><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
