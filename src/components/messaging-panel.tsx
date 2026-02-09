@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, ArrowLeft, Lock, MessageSquare } from 'lucide-react';
+import { Send, ArrowLeft, Lock, MessageSquare, Info } from 'lucide-react';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ import { cs } from 'date-fns/locale';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { useToast } from '@/hooks/use-toast';
 
 export function MessagingPanel() {
   const { currentUser, users, approveContactInPerson } = useMikyos();
@@ -26,6 +27,7 @@ export function MessagingPanel() {
   const [chatId, setChatId] = useState<string | null>(null);
   const firestore = useFirestore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   // State for approval flow
   const [requestingApprovalFor, setRequestingApprovalFor] = useState<User | null>(null);
@@ -90,6 +92,16 @@ export function MessagingPanel() {
   };
 
   const handleContactClick = (user: User) => {
+    // New rule: "ostatní" cannot initiate with "mladší"
+    if (currentUser && currentUser.role === 'ostatní' && user.role === 'mladší') {
+      toast({
+        title: 'Komunikace omezena',
+        description: `Pro zahájení konverzace tě musí ${user.name} mít ve schválených kontaktech a napsat jako první.`,
+        duration: 5000,
+      });
+      return; // Stop further action
+    }
+
     const canMessageWithoutApproval = currentUser && currentUser.role === 'starší';
     const isContactApproved = approvedContactIds.includes(user.id);
     
@@ -235,7 +247,26 @@ export function MessagingPanel() {
           <ScrollArea className="h-full -mr-6 pr-6">
               <div className="space-y-2">
                    {contacts.map(user => {
-                      const canMessageWithoutApproval = currentUser && currentUser.role === 'starší';
+                      // Special case: "ostatní" viewing "mladší"
+                      if (currentUser.role === 'ostatní' && user.role === 'mladší') {
+                          return (
+                              <button
+                                  key={user.id}
+                                  onClick={() => handleContactClick(user)}
+                                  className="flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-accent transition-colors"
+                              >
+                                  <Avatar><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
+                                  <div className="flex-1">
+                                      <p className="font-semibold">{user.name}</p>
+                                      <p className="text-sm text-amber-600 font-medium">Musí napsat první</p>
+                                  </div>
+                                  <Info className="h-5 w-5 text-amber-600" />
+                              </button>
+                          );
+                      }
+                      
+                      // Existing logic for everyone else
+                      const canMessageWithoutApproval = currentUser.role === 'starší';
                       const isContactApproved = approvedContactIds.includes(user.id);
                       const canStartConversation = canMessageWithoutApproval || isContactApproved;
                       return (
