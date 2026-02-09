@@ -17,6 +17,13 @@ export type User = {
   manualLockMessage?: string;
 };
 
+export type Device = {
+  id: string;
+  lastKnownUserId?: string;
+  lastKnownUserName?: string;
+  lastUnlinkedTimestamp?: any; // For Firestore serverTimestamp
+};
+
 export type GameState = "hraje_se" | "nehraje_se";
 
 export type ActiveApp = null | "admin" | "calling" | "messaging";

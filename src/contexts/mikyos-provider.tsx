@@ -6,7 +6,7 @@ import { createContext, useCallback, useEffect, useState, useMemo, useRef } from
 import type { User, UserRole, GameState, ActiveApp, Call, CallStatus, Settings } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { collection, doc, query, where, onSnapshot, updateDoc, addDoc, getDoc, collectionGroup, writeBatch } from 'firebase/firestore';
+import { collection, doc, query, where, onSnapshot, updateDoc, addDoc, getDoc, collectionGroup, writeBatch, serverTimestamp } from 'firebase/firestore';
 
 // Configuration for the RTCPeerConnection
 const servers = {
@@ -102,8 +102,15 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
       }
       return id;
     };
-    setDeviceId(getOrSetDeviceId());
-  }, []);
+    const newDeviceId = getOrSetDeviceId();
+    setDeviceId(newDeviceId);
+
+    // Ensure the device document exists in Firestore for tracking history
+    if (firestore && newDeviceId) {
+        const deviceDocRef = doc(firestore, 'devices', newDeviceId);
+        setDocumentNonBlocking(deviceDocRef, { id: newDeviceId }, { merge: true });
+    }
+  }, [firestore]);
 
   useEffect(() => {
     if (deviceId && users.length > 0) {
@@ -409,10 +416,38 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     toast(toastOptions || { title: "Schválení aktualizováno", description: "Seznam schválených položek byl upraven." });
   };
 
-  const updateUserDeviceIds = (userId: string, deviceIds: string[]) => {
+  const updateUserDeviceIds = (userId: string, updatedDeviceIds: string[]) => {
     if (!firestore) return;
+
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    const originalDeviceIds = user.deviceIds || [];
+    
+    // Find and log removed devices
+    const removedDeviceIds = originalDeviceIds.filter(id => !updatedDeviceIds.includes(id));
+    for (const deviceId of removedDeviceIds) {
+      const deviceDocRef = doc(firestore, 'devices', deviceId);
+      setDocumentNonBlocking(deviceDocRef, {
+        lastKnownUserId: user.id,
+        lastKnownUserName: user.name,
+        lastUnlinkedTimestamp: serverTimestamp()
+      }, { merge: true });
+    }
+
+    // Find and clear history for added devices
+    const addedDeviceIds = updatedDeviceIds.filter(id => !originalDeviceIds.includes(id));
+    for (const deviceId of addedDeviceIds) {
+        const deviceDocRef = doc(firestore, 'devices', deviceId);
+        setDocumentNonBlocking(deviceDocRef, {
+            lastKnownUserId: null,
+            lastKnownUserName: null,
+            lastUnlinkedTimestamp: null
+        }, { merge: true });
+    }
+
     const userDocRef = doc(firestore, 'users', userId);
-    updateDocumentNonBlocking(userDocRef, { deviceIds });
+    updateDocumentNonBlocking(userDocRef, { deviceIds: updatedDeviceIds });
     toast({ title: "Zařízení aktualizována", description: "Seznam zařízení uživatele byl upraven." });
   };
 

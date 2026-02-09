@@ -70,11 +70,23 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Device",
       "type": "object",
-      "description": "Represents a device within the MikyOS Family Connect application.",
+      "description": "Represents a device within the MikyOS Family Connect application. Tracks current and past ownership.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the Device entity. This should match one of the deviceIds on the User entity."
+        },
+        "lastKnownUserId": {
+          "type": "string",
+          "description": "The ID of the last user this device was assigned to."
+        },
+        "lastKnownUserName": {
+          "type": "string",
+          "description": "The name of the last user this device was assigned to."
+        },
+        "lastUnlinkedTimestamp": {
+          "type": "object",
+          "description": "Firestore server timestamp of when the device was last unassigned."
         }
       },
       "required": [

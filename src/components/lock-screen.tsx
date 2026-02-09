@@ -8,6 +8,10 @@ import { useMikyos } from '@/hooks/use-mikyos';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { Device } from '@/lib/types';
+
 
 interface LockScreenProps {
   message: string;
@@ -17,6 +21,15 @@ interface LockScreenProps {
 export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) {
   const { login, currentUser, logout, deviceUser, deviceId } = useMikyos();
   const [pin, setPin] = useState('');
+  const firestore = useFirestore();
+
+  // Fetch device history if the device is unregistered
+  const deviceDocRef = useMemoFirebase(
+    () => (firestore && deviceId && !deviceUser ? doc(firestore, 'devices', deviceId) : null),
+    [firestore, deviceId, deviceUser]
+  );
+  const { data: deviceData } = useDoc<Device>(deviceDocRef);
+
 
   const handleLogin = () => {
     if (pin) {
@@ -92,7 +105,10 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
                 Neregistrované zařízení
               </CardTitle>
               <CardDescription>
-                Toto zařízení není přiřazeno žádnému uživateli. Pro aktivaci použijte níže uvedené ID.
+                {deviceData?.lastKnownUserName
+                  ? `Toto zařízení bylo dříve používáno účtem ${deviceData.lastKnownUserName}.`
+                  : 'Toto zařízení není přiřazeno žádnému uživateli.'}
+                {' '}Pro aktivaci použijte níže uvedené ID.
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
