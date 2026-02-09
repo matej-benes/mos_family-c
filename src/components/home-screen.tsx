@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, Shield, MessageCircle, Gamepad2, Users } from 'lucide-react';
+import { Phone, Shield, MessageCircle, Gamepad2, SlidersHorizontal } from 'lucide-react';
 import { AppIcon, type AppIconProps } from './app-icon';
 import { useMikyos } from '@/hooks/use-mikyos';
 
@@ -28,7 +28,15 @@ export function HomeScreen() {
       icon: <Shield className="h-8 w-8" />,
       onClick: () => setActiveApp('admin'),
       color: 'bg-red-500/20 text-red-500',
-      roles: ['superadmin', 'starší'],
+      roles: ['superadmin'],
+    },
+    {
+      id: 'system-manager',
+      label: 'Správce systému',
+      icon: <SlidersHorizontal className="h-8 w-8" />,
+      onClick: () => setActiveApp('admin'),
+      color: 'bg-purple-500/20 text-purple-500',
+      roles: ['starší'],
     },
     {
       id: 'game1',
