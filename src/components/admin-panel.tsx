@@ -115,8 +115,8 @@ export function AdminPanel() {
 
   const handleSetManualLock = (userId: string) => {
     const message = manualLockMessages[userId];
-    if (message) {
-      setManualLock(userId, message);
+    if (message && currentUser) {
+      setManualLock(userId, message, currentUser.id);
     }
   };
 

@@ -12,7 +12,7 @@
         },
         "role": {
           "type": "string",
-          "description": "The role of the user (e.g., 'superadmin', 'starší', 'mladší', 'ostatní')."
+          "description": "The role of the user (e.g., 'superadmin', 'starsi', 'mladsi', 'ostatni')."
         },
         "deviceIds": {
           "type": "array",
@@ -58,6 +58,10 @@
         "manualLockMessage": {
             "type": "string",
             "description": "The message to display when the user is manually locked out."
+        },
+        "manualLockInitiatorId": {
+          "type": "string",
+          "description": "The ID of the user who initiated the manual lock."
         }
       },
       "required": [

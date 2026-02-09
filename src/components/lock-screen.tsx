@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { ShieldBan, LogIn, LogOut, Copy } from 'lucide-react';
+import { ShieldBan, LogIn, LogOut, Copy, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useMikyos } from '@/hooks/use-mikyos';
@@ -13,6 +13,7 @@ import { doc } from 'firebase/firestore';
 import type { Device } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
+import { Separator } from './ui/separator';
 
 
 interface LockScreenProps {
@@ -21,7 +22,7 @@ interface LockScreenProps {
 }
 
 export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) {
-  const { login, currentUser, logout, deviceUser, deviceId, users } = useMikyos();
+  const { login, currentUser, logout, deviceUser, deviceId, users, startCall, activeCall } = useMikyos();
   const [pin, setPin] = useState('');
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -38,6 +39,10 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
     [firestore, deviceId, deviceUser]
   );
   const { data: deviceData } = useDoc<Device>(deviceDocRef);
+
+  const lockingAdmin = users.find(u => u.id === currentUser?.manualLockInitiatorId);
+  const emergencyContacts = users.filter(u => u.role === 'starsi');
+  const isManuallyLocked = !!currentUser?.isManuallyLocked && !isLoginScreen;
 
 
   const handleLogin = () => {
@@ -79,21 +84,54 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
         <div className="flex items-center justify-center h-screen w-screen bg-background">
         <Card className="w-full max-w-sm mx-4 shadow-2xl animate-in fade-in-50 zoom-in-95">
             <CardHeader className="text-center">
-            <div className="mx-auto bg-primary/20 text-primary rounded-full p-3 w-fit mb-4">
-                <ShieldBan className="h-10 w-10" />
-            </div>
-            <CardTitle className="font-headline text-2xl">
-                Systém uzamčen
-            </CardTitle>
-            <CardDescription>{message}</CardDescription>
+                <div className="mx-auto bg-destructive text-destructive-foreground rounded-full p-3 w-fit mb-4">
+                    <ShieldBan className="h-10 w-10" />
+                </div>
+                <CardTitle className="font-headline text-2xl">
+                    Systém uzamčen
+                </CardTitle>
+                <CardDescription>{message}</CardDescription>
+                {isManuallyLocked && lockingAdmin && (
+                    <CardDescription className="pt-2 text-xs text-muted-foreground">
+                        Uzamkl(a) {lockingAdmin.name}
+                    </CardDescription>
+                )}
             </CardHeader>
+            <CardContent>
+                {isManuallyLocked && emergencyContacts.length > 0 && (
+                    <div className="space-y-4">
+                        <Separator />
+                        <div className="text-center">
+                            <p className="text-sm font-semibold">Nouzové volání</p>
+                            <p className="text-xs text-muted-foreground">Můžeš zavolat starším sourozencům.</p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            {emergencyContacts.map(contact => (
+                                <div key={contact.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/50">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarImage src={contact.avatarUrl} />
+                                            <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <span className="font-medium text-sm">{contact.name}</span>
+                                    </div>
+                                    <Button size="icon" variant="ghost" className="rounded-full h-10 w-10" onClick={() => startCall(contact.id)} disabled={!!activeCall}>
+                                        <Phone className="h-5 w-5 text-green-600" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                        <Separator />
+                    </div>
+                )}
+            </CardContent>
             {currentUser && (
-                <CardContent>
+                <CardFooter>
                     <Button onClick={logout} variant="outline" className="w-full">
                         <LogOut className="mr-2 h-4 w-4" />
                         Odhlásit se
                     </Button>
-                </CardContent>
+                </CardFooter>
             )}
         </Card>
         </div>

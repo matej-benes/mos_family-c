@@ -15,6 +15,7 @@ export type User = {
   };
   isManuallyLocked?: boolean;
   manualLockMessage?: string;
+  manualLockInitiatorId?: string;
 };
 
 export type Device = {

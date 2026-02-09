@@ -34,7 +34,7 @@ interface MikyosContextType {
   setBedtime: (userId: string, time: string) => void;
   updateUserApprovals: (userId: string, approvals: { apps: string[]; contacts: string[] }, toastOptions?: { title: string; description: string } | null) => void;
   updateUserDeviceIds: (userId: string, deviceIds: string[]) => void;
-  setManualLock: (userId: string, message: string) => void;
+  setManualLock: (userId: string, message: string, initiatorId: string) => void;
   clearManualLock: (userId: string) => void;
   approveContactInPerson: (requesterId: string, targetContactId: string, approverId: string, approverPin: string) => Promise<boolean>;
   // WebRTC calling state and functions
@@ -511,17 +511,17 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     toast({ title: url ? "Tapeta nastavena" : "Tapeta odstraněna" });
   };
 
-  const setManualLock = (userId: string, message: string) => {
+  const setManualLock = (userId: string, message: string, initiatorId: string) => {
     if (!firestore || !message) return;
     const userDocRef = doc(firestore, 'users', userId);
-    updateDocumentNonBlocking(userDocRef, { isManuallyLocked: true, manualLockMessage: message });
+    updateDocumentNonBlocking(userDocRef, { isManuallyLocked: true, manualLockMessage: message, manualLockInitiatorId: initiatorId });
     toast({ title: "Uživatel uzamčen", description: "Uživatel byl manuálně uzamčen." });
   };
 
   const clearManualLock = (userId: string) => {
     if (!firestore) return;
     const userDocRef = doc(firestore, 'users', userId);
-    updateDocumentNonBlocking(userDocRef, { isManuallyLocked: false, manualLockMessage: '' });
+    updateDocumentNonBlocking(userDocRef, { isManuallyLocked: false, manualLockMessage: '', manualLockInitiatorId: null });
     toast({ title: "Uživatel odemčen", description: "Uživatel byl odemčen." });
   };
 
