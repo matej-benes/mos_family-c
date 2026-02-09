@@ -92,13 +92,13 @@ export function MessagingPanel() {
   const handleContactClick = (user: User) => {
     if (!currentUser) return;
 
-    // RULE 1: 'starší' can always start a conversation. This is the highest priority.
+    // RULE 1: 'starší' can always start a conversation.
     if (currentUser.role === 'starší') {
       setChattingWith(user);
       return;
     }
 
-    // RULE 2: 'ostatní' cannot *initiate* with 'mladší'.
+    // RULE 2: 'ostatní' cannot *initiate* with 'mladší'. This is a hard block.
     if (currentUser.role === 'ostatní' && user.role === 'mladší') {
       toast({
         title: 'Komunikace omezena',
@@ -108,11 +108,12 @@ export function MessagingPanel() {
       return;
     }
 
-    // RULE 3 (Default): For all others, check for approval directly from the currentUser object.
+    // RULE 3: For 'mladší' and 'ostatní', check if the contact is approved.
     const isContactApproved = (currentUser.approvals?.contacts || []).includes(user.id);
     if (isContactApproved) {
       setChattingWith(user);
     } else {
+      // If not approved, trigger the approval flow. This is applicable for both 'mladší' and 'ostatní' (for contacts other than 'mladší').
       setRequestingApprovalFor(user);
     }
   };
@@ -166,14 +167,16 @@ export function MessagingPanel() {
                     <SelectValue placeholder="Vyber staršího sourozence" />
                   </SelectTrigger>
                   <SelectContent>
-                    {olderSiblings.map(sibling => (
+                    {olderSiblings.length > 0 ? olderSiblings.map(sibling => (
                       <SelectItem key={sibling.id} value={sibling.id}>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6"><AvatarImage src={sibling.avatarUrl} /><AvatarFallback>{sibling.name.charAt(0)}</AvatarFallback></Avatar>
                           <span>{sibling.name}</span>
                         </div>
                       </SelectItem>
-                    ))}
+                    )) : (
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">Nejsou zde žádní starší sourozenci pro schválení.</div>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
