@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -51,7 +52,7 @@ interface MikyosContextType {
 export const MikyosContext = createContext<MikyosContextType | undefined>(undefined);
 
 export function MikyosProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [deviceUser, setDeviceUser] = useState<User | null>(null);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [activeApp, setActiveApp] = useState<ActiveApp>(null);
@@ -80,6 +81,11 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   const users = useMemo(() => usersData || [], [usersData]);
   const gameState = useMemo(() => gameStateData?.mode || 'nehraje_se', [gameStateData]);
   const wallpaperUrl = useMemo(() => settingsData?.wallpaperUrl, [settingsData]);
+
+  const currentUser = useMemo(() => {
+    if (!currentUserId || users.length === 0) return null;
+    return users.find(u => u.id === currentUserId) || null;
+  }, [currentUserId, users]);
 
 
   useEffect(() => {
@@ -141,7 +147,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     });
 
     return unsub;
-  }, [firestore, activeCall])
+  }, [firestore, activeCall]);
 
   const setupPeerConnection = useCallback((callId: string) => {
     if (!firestore) return null;
@@ -365,20 +371,10 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, [checkLockState]);
 
-  // Update current user details if they change in the database
-  useEffect(() => {
-    if (currentUser) {
-        const liveUser = users.find(u => u.id === currentUser.id);
-        if (liveUser) {
-            setCurrentUser(liveUser);
-        }
-    }
-  }, [users, currentUser]);
-
 
   const login = (pin: string) => {
     if (deviceUser && deviceUser.pin === pin) {
-      setCurrentUser(deviceUser);
+      setCurrentUserId(deviceUser.id);
       setActiveApp(null);
       toast({ title: `Vítej, ${deviceUser.name}!`, description: "Jsi přihlášen." });
     } else if (!deviceUser) {
@@ -390,7 +386,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     toast({ title: "Odhlášeno", description: "Byli jste odhlášeni." });
-    setCurrentUser(null);
+    setCurrentUserId(null);
     setActiveApp(null);
     hangUp();
   };
