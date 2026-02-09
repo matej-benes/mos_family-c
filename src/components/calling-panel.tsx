@@ -16,19 +16,15 @@ export function CallingPanel() {
 
     const allOtherUsers = users.filter(u => u.id !== currentUser.id && u.role !== 'superadmin');
 
-    if (currentUser.role === 'starší' || currentUser.role === 'superadmin') {
+    // 'starší', 'ostatní', and 'superadmin' can call anyone
+    if (['starší', 'ostatní', 'superadmin'].includes(currentUser.role)) {
         return allOtherUsers;
     }
 
+    // 'mladší' can only call approved contacts
     const approvedContactIds = currentUser.approvals?.contacts || [];
-    return allOtherUsers.filter(u => {
-        // Prevent 'ostatní' from calling 'mladší' even if approved, unless the 'mladší' has them approved too. 
-        // For simplicity of call (vs chat), we just check if the current user is approved to call them.
-        if (currentUser.role === 'ostatní' && u.role === 'mladší') {
-            return false;
-        }
-        return approvedContactIds.includes(u.id);
-    });
+    return allOtherUsers.filter(u => approvedContactIds.includes(u.id));
+    
   }, [currentUser, users]);
   
   const isCalling = !!activeCall;
@@ -40,7 +36,7 @@ export function CallingPanel() {
         <CardDescription>Zavolejte ostatním členům rodiny. Pro volání jsou zobrazeni pouze schválení uživatelé.</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4 min-h-0">
-        <h3 className="text-lg font-semibold">Schválené kontakty</h3>
+        <h3 className="text-lg font-semibold">Dostupné kontakty</h3>
         <ScrollArea className="flex-1 -mr-6 pr-6">
           <div className="space-y-4">
             {callableUsers.length > 0 ? (

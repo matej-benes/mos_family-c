@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, ArrowLeft, Lock, MessageSquare, Info } from 'lucide-react';
+import { Send, ArrowLeft, Lock, MessageSquare } from 'lucide-react';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { cn } from '@/lib/utils';
@@ -92,28 +92,18 @@ export function MessagingPanel() {
   const handleContactClick = (user: User) => {
     if (!currentUser) return;
 
-    // RULE 1: 'starší' can always start a conversation.
-    if (currentUser.role === 'starší') {
+    // 'starší' and 'ostatní' can always start a conversation.
+    if (['starší', 'ostatní', 'superadmin'].includes(currentUser.role)) {
       setChattingWith(user);
       return;
     }
 
-    // RULE 2: 'ostatní' cannot *initiate* with 'mladší'. This is a hard block.
-    if (currentUser.role === 'ostatní' && user.role === 'mladší') {
-      toast({
-        title: 'Komunikace omezena',
-        description: `Pro zahájení konverzace tě musí ${user.name} mít ve schválených kontaktech a napsat jako první.`,
-        duration: 5000,
-      });
-      return;
-    }
-
-    // RULE 3: For 'mladší' and 'ostatní', check if the contact is approved.
+    // For 'mladší', check if the contact is approved.
     const isContactApproved = (currentUser.approvals?.contacts || []).includes(user.id);
     if (isContactApproved) {
       setChattingWith(user);
     } else {
-      // If not approved, trigger the approval flow. This is applicable for both 'mladší' and 'ostatní' (for contacts other than 'mladší').
+      // If not approved, trigger the approval flow.
       setRequestingApprovalFor(user);
     }
   };
@@ -256,26 +246,7 @@ export function MessagingPanel() {
           <ScrollArea className="h-full -mr-6 pr-6">
               <div className="space-y-2">
                    {contacts.map(user => {
-                      // Special case: "ostatní" viewing "mladší"
-                      if (currentUser.role === 'ostatní' && user.role === 'mladší') {
-                          return (
-                              <button
-                                  key={user.id}
-                                  onClick={() => handleContactClick(user)}
-                                  className="flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-accent transition-colors"
-                              >
-                                  <Avatar><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
-                                  <div className="flex-1">
-                                      <p className="font-semibold">{user.name}</p>
-                                      <p className="text-sm text-amber-600 font-medium">Musí napsat první</p>
-                                  </div>
-                                  <Info className="h-5 w-5 text-amber-600" />
-                              </button>
-                          );
-                      }
-                      
-                      // Logic for everyone else.
-                      const canStartConversation = currentUser.role === 'starší' || (currentUser.approvals?.contacts || []).includes(user.id);
+                      const canStartConversation = ['starší', 'ostatní', 'superadmin'].includes(currentUser.role) || (currentUser.approvals?.contacts || []).includes(user.id);
                       
                       return (
                       <button key={user.id} onClick={() => handleContactClick(user)} className="flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-accent transition-colors">
