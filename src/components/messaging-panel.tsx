@@ -244,14 +244,14 @@ export function MessagingPanel() {
       </CardHeader>
       <CardContent className="flex-1 min-h-0">
           <ScrollArea className="h-full -mr-6 pr-6">
-            <div className="space-y-2">
-              {contacts.map(user => {
-                // Definice, zda má aktuální uživatel právo psát tomuto kontaktu
-                const isPrivilegedRole = ['starší', 'ostatní', 'superadmin'].includes(currentUser.role);
-                const isApproved = (currentUser.approvals?.contacts || []).includes(user.id);
-                const canStartConversation = isPrivilegedRole || isApproved;
-                
-                return (
+            <div className="space-y-6">
+              {/* 1. SEKCE: JIŽ SCHVÁLENÉ KONTAKTY / MOŽNOST PSÁT */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground px-3 mb-2">Moje konverzace</h3>
+                {contacts.filter(user => 
+                  ['starší', 'ostatní', 'superadmin'].includes(currentUser.role) || 
+                  (currentUser.approvals?.contacts || []).includes(user.id)
+                ).map(user => (
                   <button 
                     key={user.id} 
                     onClick={() => handleContactClick(user)} 
@@ -263,24 +263,42 @@ export function MessagingPanel() {
                     </Avatar>
                     <div className="flex-1">
                       <p className="font-semibold">{user.name}</p>
-                      <p className={cn(
-                        "text-sm", 
-                        canStartConversation ? "text-muted-foreground" : "text-blue-500 font-medium"
-                      )}>
-                        {canStartConversation ? 'Zahájit konverzaci' : 'Požádat o schválení'}
-                      </p>
+                      <p className="text-sm text-muted-foreground">Zahájit konverzaci</p>
                     </div>
-                    {/* Ikona se mění podle oprávnění */}
-                    {canStartConversation ? (
-                      <MessageSquare className="h-5 w-5 text-muted-foreground" />
-                    ) : (
-                      <Lock className="h-5 w-5 text-blue-500" />
-                    )}
+                    <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   </button>
-                );
-              })}
+                ))}
+              </div>
+
+              {/* 2. SEKCE: POUZE PRO ROLI MLADŠÍ - MOŽNOST SCHVÁLENÍ OSOBNĚ */}
+              {currentUser.role === 'mladší' && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-blue-500 px-3 mb-2">Požádat o schválení (osobně)</h3>
+                  {contacts.filter(user => 
+                    ! (currentUser.approvals?.contacts || []).includes(user.id) &&
+                    user.role === 'starší'
+                  ).map(user => (
+                    <button 
+                      key={user.id} 
+                      onClick={() => handleContactClick(user)} 
+                      className="flex items-center gap-4 p-3 w-full text-left rounded-lg border border-dashed border-blue-200 hover:bg-blue-50 transition-colors"
+                    >
+                      <Avatar>
+                        <AvatarImage src={user.avatarUrl} />
+                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-semibold">{user.name}</p>
+                        <p className="text-sm text-blue-500 font-medium">Klikni pro schválení PINem</p>
+                      </div>
+                      <Lock className="h-5 w-5 text-blue-500" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {contacts.length === 0 && (
-                <p className="text-muted-foreground text-center py-8">Nejsou zde žádní další uživatelé.</p>
+                <p className="text-muted-foreground text-center py-8">Žádní uživatelé k dispozici.</p>
               )}
             </div>
           </ScrollArea>
