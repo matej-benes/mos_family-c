@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { ShieldBan, LogIn, LogOut } from 'lucide-react';
+import { ShieldBan, LogIn, LogOut, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useMikyos } from '@/hooks/use-mikyos';
@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Device } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from './ui/scroll-area';
 
 
 interface LockScreenProps {
@@ -19,9 +21,16 @@ interface LockScreenProps {
 }
 
 export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) {
-  const { login, currentUser, logout, deviceUser, deviceId } = useMikyos();
+  const { login, currentUser, logout, deviceUser, deviceId, users } = useMikyos();
   const [pin, setPin] = useState('');
   const firestore = useFirestore();
+  const { toast } = useToast();
+
+  // State for hidden section
+  const [clickCount, setClickCount] = useState(0);
+  const [showPasswordField, setShowPasswordField] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [showHiddenSection, setShowHiddenSection] = useState(false);
 
   // Fetch device history if the device is unregistered
   const deviceDocRef = useMemoFirebase(
@@ -36,6 +45,34 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
       login(pin);
     }
   };
+
+  const handleHeaderClick = () => {
+    if (showHiddenSection || showPasswordField) return; // Don't react if already triggered
+    const newCount = clickCount + 1;
+    setClickCount(newCount);
+    if (newCount >= 10) {
+      setShowPasswordField(true);
+      setClickCount(0); // Reset for next time
+    }
+  };
+
+  const handlePasswordCheck = () => {
+    if (passwordInput === 'Mikmat2008') {
+      setShowHiddenSection(true);
+      setShowPasswordField(false);
+      toast({ title: 'Přístup povolen', description: 'Zobrazuji seznam ID uživatelů.' });
+    } else {
+      toast({ variant: 'destructive', title: 'Špatné heslo', description: 'Přístup zamítnut.' });
+      setShowPasswordField(false);
+    }
+    setPasswordInput('');
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Zkopírováno!', description: 'ID bylo zkopírováno do schránky.' });
+  };
+
 
   if (!isLoginScreen) {
     return (
@@ -97,21 +134,23 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
           </>
         ) : (
           <>
-            <CardHeader className="text-center">
-              <div className="mx-auto bg-destructive/20 text-destructive rounded-full p-3 w-fit mb-4">
-                <ShieldBan className="h-10 w-10" />
-              </div>
-              <CardTitle className="font-headline text-2xl">
-                Neregistrované zařízení
-              </CardTitle>
-              <CardDescription>
-                {deviceData?.lastKnownUserName
-                  ? `Toto zařízení bylo dříve používáno účtem ${deviceData.lastKnownUserName}.`
-                  : 'Toto zařízení není přiřazeno žádnému uživateli.'}
-                {' '}Pro aktivaci použijte níže uvedené ID.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
+            <div onClick={handleHeaderClick} className="cursor-pointer" title="Secret Action">
+              <CardHeader className="text-center">
+                <div className="mx-auto bg-destructive/20 text-destructive rounded-full p-3 w-fit mb-4">
+                  <ShieldBan className="h-10 w-10" />
+                </div>
+                <CardTitle className="font-headline text-2xl">
+                  Neregistrované zařízení
+                </CardTitle>
+                <CardDescription>
+                  {deviceData?.lastKnownUserName
+                    ? `Toto zařízení bylo dříve používáno účtem ${deviceData.lastKnownUserName}.`
+                    : 'Toto zařízení není přiřazeno žádnému uživateli.'}
+                  {' '}Pro aktivaci použijte níže uvedené ID.
+                </CardDescription>
+              </CardHeader>
+            </div>
+            <CardContent className="flex flex-col gap-4 pt-6">
                 <div className="space-y-2 text-center">
                     <Label htmlFor="deviceId" className="text-muted-foreground">ID tohoto zařízení</Label>
                     <Input
@@ -126,6 +165,43 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
                         Zkopírujte toto ID a v administraci ho přidejte do seznamu zařízení pro požadovaného uživatele.
                     </p>
                 </div>
+                
+                {showPasswordField && (
+                    <div className="space-y-2 animate-in fade-in-50">
+                        <Label htmlFor="hidden-password">Heslo pro zobrazení ID</Label>
+                        <div className="flex gap-2">
+                          <Input
+                              id="hidden-password"
+                              type="password"
+                              value={passwordInput}
+                              onChange={(e) => setPasswordInput(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handlePasswordCheck()}
+                          />
+                          <Button onClick={handlePasswordCheck}>Ověřit</Button>
+                        </div>
+                    </div>
+                )}
+                
+                {showHiddenSection && (
+                    <div className="space-y-3 pt-4 border-t animate-in fade-in-50">
+                        <Label className="font-bold">Seznam ID uživatelů</Label>
+                        <ScrollArea className="h-40 rounded-md border p-2 bg-background">
+                           <div className="space-y-3">
+                            {users.map(user => (
+                              <div key={user.id}>
+                                <p className="font-semibold text-sm">{user.name}</p>
+                                <div className="flex items-center justify-between gap-2 font-mono text-xs text-muted-foreground bg-muted p-2 rounded">
+                                  <span>{user.id}</span>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyToClipboard(user.id)}>
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                           </div>
+                        </ScrollArea>
+                    </div>
+                )}
             </CardContent>
           </>
         )}
