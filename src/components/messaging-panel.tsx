@@ -259,7 +259,7 @@ export function MessagingPanel() {
               </h3>
               {contacts
                 .filter(u => 
-                  ['starší', 'ostatní'].includes(currentUser.role) || 
+                  ['starší', 'ostatní', 'superadmin'].includes(currentUser.role) || 
                   (currentUser.approvals?.contacts || []).includes(u.id)
                 )
                 .map(user => (
