@@ -180,6 +180,22 @@
           "description": "URL for the global background wallpaper."
         }
       }
+    },
+    "Event": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Event",
+      "type": "object",
+      "description": "Represents a calendar event.",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "description": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdByName": { "type": "string" }
+      },
+      "required": ["title", "date", "createdBy", "createdByName"]
     }
   },
   "auth": {
@@ -293,6 +309,15 @@
             "$ref": "#/backend/entities/Settings"
           },
           "description": "Stores global application settings like the wallpaper."
+        }
+      },
+      {
+        "path": "/events/{eventId}",
+        "definition": {
+          "entityName": "Event",
+          "schema": { "$ref": "#/backend/entities/Event" },
+          "description": "Stores calendar events.",
+          "params": [{ "name": "eventId", "description": "The unique identifier for the event." }]
         }
       }
     ]

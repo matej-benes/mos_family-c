@@ -3,10 +3,10 @@
 
 import type { ReactNode } from 'react';
 import { createContext, useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import type { User, UserRole, GameState, ActiveApp, Call, CallStatus, Settings } from '@/lib/types';
+import type { User, UserRole, GameState, ActiveApp, Call, CallStatus, Settings, Event } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { collection, doc, query, where, onSnapshot, updateDoc, addDoc, getDoc, collectionGroup, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc, query, where, onSnapshot, updateDoc, addDoc, getDoc, collectionGroup, writeBatch, serverTimestamp, orderBy as firestoreOrderBy } from 'firebase/firestore';
 
 // Configuration for the RTCPeerConnection
 const servers = {
@@ -48,6 +48,10 @@ interface MikyosContextType {
   // Wallpaper
   wallpaperUrl?: string;
   setWallpaper: (url: string) => void;
+  // Calendar Events
+  events: Event[];
+  addEvent: (eventData: Omit<Event, 'id' | 'createdBy' | 'createdByName'>) => void;
+  deleteEvent: (eventId: string) => void;
 }
 
 export const MikyosContext = createContext<MikyosContextType | undefined>(undefined);
@@ -79,9 +83,13 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   const settingsDoc = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'global') : null, [firestore]);
   const { data: settingsData } = useDoc<Settings>(settingsDoc);
 
+  const eventsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'events'), firestoreOrderBy('date', 'asc'), firestoreOrderBy('startTime', 'asc')) : null, [firestore]);
+  const { data: eventsData } = useCollection<Event>(eventsQuery);
+
   const users = useMemo(() => usersData || [], [usersData]);
   const gameState = useMemo(() => gameStateData?.mode || 'nehraje_se', [gameStateData]);
   const wallpaperUrl = useMemo(() => settingsData?.wallpaperUrl, [settingsData]);
+  const events = useMemo(() => eventsData || [], [eventsData]);
 
   const currentUser = useMemo(() => {
     if (!currentUserId || users.length === 0) return null;
@@ -525,6 +533,26 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     toast({ title: "Uživatel odemčen", description: "Uživatel byl odemčen." });
   };
 
+  const addEvent = useCallback((eventData: Omit<Event, 'id' | 'createdBy' | 'createdByName'>) => {
+    if (!firestore || !currentUser) return;
+    const eventsCollection = collection(firestore, 'events');
+    const newEvent = {
+      ...eventData,
+      createdBy: currentUser.id,
+      createdByName: currentUser.name,
+    };
+    addDocumentNonBlocking(eventsCollection, newEvent);
+    toast({ title: "Událost přidána", description: `${eventData.title} byla přidána do kalendáře.` });
+  }, [firestore, currentUser, toast]);
+
+  const deleteEvent = useCallback((eventId: string) => {
+    if (!firestore) return;
+    const eventDocRef = doc(firestore, 'events', eventId);
+    deleteDocumentNonBlocking(eventDocRef);
+    toast({ title: "Událost smazána" });
+  }, [firestore, toast]);
+
+
   const value = {
     currentUser,
     users,
@@ -553,6 +581,9 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     setManualLock,
     clearManualLock,
     approveContactInPerson,
+    events,
+    addEvent,
+    deleteEvent
   };
 
   return <MikyosContext.Provider value={value}>{children}</MikyosContext.Provider>;

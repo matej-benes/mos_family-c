@@ -65,3 +65,14 @@ export type Settings = {
   id: string;
   wallpaperUrl?: string;
 };
+
+export type Event = {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD format
+  startTime?: string;
+  endTime?: string;
+  description?: string;
+  createdBy: string;
+  createdByName: string;
+};

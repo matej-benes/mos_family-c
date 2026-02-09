@@ -43,5 +43,9 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true; // Insecure for prototyping
     }
+
+    match /events/{eventId} {
+      allow read, write: if true; // Insecure for prototyping
+    }
   }
 }

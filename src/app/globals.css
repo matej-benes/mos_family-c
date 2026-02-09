@@ -86,3 +86,27 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom styles for calendar event indicator */
+@layer components {
+    .rdp-day_has_event {
+        position: relative;
+    }
+    .rdp-day_has_event::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 6px;
+        height: 6px;
+        border-radius: 9999px;
+        background-color: hsl(var(--primary));
+    }
+    .rdp-day_selected.rdp-day_has_event::after {
+       background-color: hsl(var(--primary-foreground));
+    }
+    .rdp-day_today.rdp-day_has_event::after {
+       background-color: hsl(var(--accent-foreground));
+    }
+}
