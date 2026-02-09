@@ -38,9 +38,11 @@ export function MessagingPanel() {
   const olderSiblings = useMemo(() => users.filter(u => u.role === 'starší'), [users]);
   
   const contacts = useMemo(() => {
-    if (!currentUser) return [];
+    if (!currentUser || !users) return [];
+    // Odfiltrujeme sebe sama a superadminy, zbytek z databáze (users) zůstává
     return users.filter(u => u.id !== currentUser.id && u.role !== 'superadmin');
   }, [currentUser, users]);
+
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -237,25 +239,34 @@ export function MessagingPanel() {
   }
 
   return (
-     <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col">
       <CardHeader>
-          <CardTitle>Zprávy</CardTitle>
-          <CardDescription>Zahajte konverzaci nebo požádejte o schválení nového kontaktu.</CardDescription>
+        <CardTitle>Zprávy</CardTitle>
+        <CardDescription>
+          {currentUser.role === 'mladší' 
+            ? "Vyber si, s kým chceš psát, nebo popros staršího o schválení." 
+            : "Napiš komukoliv ze seznamu."}
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 min-h-0">
-          <ScrollArea className="h-full -mr-6 pr-6">
-            <div className="space-y-6">
-              {/* 1. SEKCE: JIŽ SCHVÁLENÉ KONTAKTY / MOŽNOST PSÁT */}
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-muted-foreground px-3 mb-2">Moje konverzace</h3>
-                {contacts.filter(user => 
-                  ['starší', 'ostatní', 'superadmin'].includes(currentUser.role) || 
-                  (currentUser.approvals?.contacts || []).includes(user.id)
-                ).map(user => (
+        <ScrollArea className="h-full -mr-6 pr-6">
+          <div className="space-y-6">
+            
+            {/* SEKCE: KONTAKTY, KTERÉ MOHU ROVNOU KONTAKTOVAT */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-3">
+                Moje konverzace
+              </h3>
+              {contacts
+                .filter(u => 
+                  ['starší', 'ostatní'].includes(currentUser.role) || 
+                  (currentUser.approvals?.contacts || []).includes(u.id)
+                )
+                .map(user => (
                   <button 
                     key={user.id} 
                     onClick={() => handleContactClick(user)} 
-                    className="flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-accent transition-colors"
+                    className="flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-accent transition-colors border border-transparent"
                   >
                     <Avatar>
                       <AvatarImage src={user.avatarUrl} />
@@ -263,25 +274,26 @@ export function MessagingPanel() {
                     </Avatar>
                     <div className="flex-1">
                       <p className="font-semibold">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">Zahájit konverzaci</p>
+                      <p className="text-sm text-muted-foreground">Zahájit chat</p>
                     </div>
                     <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   </button>
                 ))}
-              </div>
+            </div>
 
-              {/* 2. SEKCE: POUZE PRO ROLI MLADŠÍ - MOŽNOST SCHVÁLENÍ OSOBNĚ */}
-              {currentUser.role === 'mladší' && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium text-blue-500 px-3 mb-2">Požádat o schválení (osobně)</h3>
-                  {contacts.filter(user => 
-                    ! (currentUser.approvals?.contacts || []).includes(user.id) &&
-                    user.role === 'starší'
-                  ).map(user => (
+            {/* SEKCE PRO MLADŠÍ: LIDÉ KE SCHVÁLENÍ (Zobrazí jen ty, co nejsou schválení) */}
+            {currentUser.role === 'mladší' && (
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-blue-500 px-3">
+                  Potřebuji schválit
+                </h3>
+                {contacts
+                  .filter(u => !(currentUser.approvals?.contacts || []).includes(u.id))
+                  .map(user => (
                     <button 
                       key={user.id} 
                       onClick={() => handleContactClick(user)} 
-                      className="flex items-center gap-4 p-3 w-full text-left rounded-lg border border-dashed border-blue-200 hover:bg-blue-50 transition-colors"
+                      className="flex items-center gap-4 p-3 w-full text-left rounded-lg border border-dashed border-blue-200 bg-blue-50/30 hover:bg-blue-50 transition-colors"
                     >
                       <Avatar>
                         <AvatarImage src={user.avatarUrl} />
@@ -289,19 +301,20 @@ export function MessagingPanel() {
                       </Avatar>
                       <div className="flex-1">
                         <p className="font-semibold">{user.name}</p>
-                        <p className="text-sm text-blue-500 font-medium">Klikni pro schválení PINem</p>
+                        <p className="text-sm text-blue-600 font-medium">Odemknout přes staršího</p>
                       </div>
-                      <Lock className="h-5 w-5 text-blue-500" />
+                      <Lock className="h-5 w-5 text-blue-400" />
                     </button>
                   ))}
-                </div>
-              )}
+              </div>
+            )}
 
-              {contacts.length === 0 && (
-                <p className="text-muted-foreground text-center py-8">Žádní uživatelé k dispozici.</p>
-              )}
-            </div>
-          </ScrollArea>
+            {/* Pokud je seznam úplně prázdný (žádní uživatelé v DB) */}
+            {contacts.length === 0 && (
+              <p className="text-muted-foreground text-center py-8">V databázi nejsou žádní uživatelé.</p>
+            )}
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
