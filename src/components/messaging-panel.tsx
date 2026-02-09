@@ -92,7 +92,7 @@ export function MessagingPanel() {
   const handleContactClick = (user: User) => {
     if (!currentUser) return;
 
-    // 'starší' and 'ostatní' can always start a conversation.
+    // 'starší', 'ostatní', and 'superadmin' can always start a conversation.
     if (['starší', 'ostatní', 'superadmin'].includes(currentUser.role)) {
       setChattingWith(user);
       return;
