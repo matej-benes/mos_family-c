@@ -28,15 +28,7 @@ export function HomeScreen() {
       icon: <Shield className="h-8 w-8" />,
       onClick: () => setActiveApp('admin'),
       color: 'bg-red-500/20 text-red-500',
-      roles: ['superadmin'],
-    },
-    {
-      id: 'system-manager',
-      label: 'Správce systému',
-      icon: <SlidersHorizontal className="h-8 w-8" />,
-      onClick: () => setActiveApp('admin'),
-      color: 'bg-purple-500/20 text-purple-500',
-      roles: ['starší'],
+      roles: ['superadmin', 'starší'],
     },
     {
       id: 'game1',
