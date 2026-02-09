@@ -35,12 +35,12 @@ export function MessagingPanel() {
   const [approverPin, setApproverPin] = useState('');
   const [isApproving, setIsApproving] = useState(false);
 
-  const olderSiblings = useMemo(() => users.filter(u => u.role === 'starší'), [users]);
+  const olderSiblings = useMemo(() => users.filter(u => u.role === 'starsi'), [users]);
   
   const contacts = useMemo(() => {
-    if (!currentUser || !users) return [];
-    // Odfiltrujeme sebe sama a superadminy, zbytek z databáze (users) zůstává
-    return users.filter(u => u.id !== currentUser.id && u.role !== 'superadmin');
+    if (!currentUser) return [];
+    // Odfiltrujeme sebe sama, zbytek z databáze (users) zůstává
+    return users.filter(u => u.id !== currentUser.id);
   }, [currentUser, users]);
 
 
@@ -94,13 +94,13 @@ export function MessagingPanel() {
   const handleContactClick = (user: User) => {
     if (!currentUser) return;
 
-    // 'starší', 'ostatní', and 'superadmin' can always start a conversation.
-    if (['starší', 'ostatní', 'superadmin'].includes(currentUser.role)) {
+    // 'starsi', 'ostatni', and 'superadmin' can always start a conversation.
+    if (['starsi', 'ostatni', 'superadmin'].includes(currentUser.role)) {
       setChattingWith(user);
       return;
     }
 
-    // For 'mladší', check if the contact is approved.
+    // For 'mladsi', check if the contact is approved.
     const isContactApproved = (currentUser.approvals?.contacts || []).includes(user.id);
     if (isContactApproved) {
       setChattingWith(user);
@@ -243,7 +243,7 @@ export function MessagingPanel() {
       <CardHeader>
         <CardTitle>Zprávy</CardTitle>
         <CardDescription>
-          {currentUser.role === 'mladší' 
+          {currentUser.role === 'mladsi' 
             ? "Vyber si, s kým chceš psát, nebo popros staršího o schválení." 
             : "Napiš komukoliv ze seznamu."}
         </CardDescription>
@@ -259,7 +259,7 @@ export function MessagingPanel() {
               </h3>
               {contacts
                 .filter(u => 
-                  ['starší', 'ostatní', 'superadmin'].includes(currentUser.role) || 
+                  ['starsi', 'ostatni', 'superadmin'].includes(currentUser.role) || 
                   (currentUser.approvals?.contacts || []).includes(u.id)
                 )
                 .map(user => (
@@ -281,8 +281,8 @@ export function MessagingPanel() {
                 ))}
             </div>
 
-            {/* SEKCE PRO MLADŠÍ: LIDÉ KE SCHVÁLENÍ (Zobrazí jen ty, co nejsou schválení) */}
-            {currentUser.role === 'mladší' && (
+            {/* SEKCE PRO MLADSI: LIDÉ KE SCHVÁLENÍ (Zobrazí jen ty, co nejsou schválení) */}
+            {currentUser.role === 'mladsi' && (
               <div className="space-y-2">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-blue-500 px-3">
                   Potřebuji schválit

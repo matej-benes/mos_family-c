@@ -333,7 +333,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    if (['superadmin', 'starší'].includes(currentUser.role)) {
+    if (['superadmin', 'starsi'].includes(currentUser.role)) {
       setIsLocked(false);
       return;
     }
@@ -454,8 +454,8 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
 
   const approveContactInPerson = async (requesterId: string, targetContactId: string, approverId: string, approverPin: string): Promise<boolean> => {
     const approver = users.find(u => u.id === approverId);
-    if (!approver || approver.role !== 'starší' || approver.pin !== approverPin) {
-      toast({ variant: 'destructive', title: 'Ověření selhalo', description: 'Neplatný PIN nebo oprávnění má pouze role "starší".' });
+    if (!approver || approver.role !== 'starsi' || approver.pin !== approverPin) {
+      toast({ variant: 'destructive', title: 'Ověření selhalo', description: 'Neplatný PIN nebo oprávnění má pouze role "starsi".' });
       return false;
     }
 
@@ -491,7 +491,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleGameMode = () => {
-    if (!currentUser || !['superadmin', 'starší'].includes(currentUser.role) || !firestore) {
+    if (!currentUser || !['superadmin', 'starsi'].includes(currentUser.role) || !firestore) {
       toast({ variant: 'destructive', title: "Oprávnění odepřeno", description: "Pro změnu herního režimu nemáte oprávnění." });
       return;
     }
@@ -502,7 +502,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   }
 
   const setWallpaper = (url: string) => {
-    if (!currentUser || !['superadmin', 'starší'].includes(currentUser.role) || !firestore) {
+    if (!currentUser || !['superadmin', 'starsi'].includes(currentUser.role) || !firestore) {
       toast({ variant: 'destructive', title: "Oprávnění odepřeno", description: "Pro změnu tapety nemáte oprávnění." });
       return;
     }

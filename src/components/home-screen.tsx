@@ -15,7 +15,7 @@ export function HomeScreen() {
       onClick: () => setActiveApp('calling'),
       color: 'bg-green-500/20 text-green-500',
     },
-     {
+    {
       id: 'messaging',
       label: 'Zprávy',
       icon: <MessageCircle className="h-8 w-8" />,
@@ -35,7 +35,7 @@ export function HomeScreen() {
       icon: <Shield className="h-8 w-8" />,
       onClick: () => setActiveApp('admin'),
       color: 'bg-red-500/20 text-red-500',
-      roles: ['superadmin', 'starší'],
+      roles: ['superadmin', 'starsi'],
     },
     {
       id: 'game1',

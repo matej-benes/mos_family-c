@@ -14,14 +14,14 @@ export function CallingPanel() {
   const callableUsers = useMemo(() => {
     if (!currentUser) return [];
 
-    const allOtherUsers = users.filter(u => u.id !== currentUser.id && u.role !== 'superadmin');
+    const allOtherUsers = users.filter(u => u.id !== currentUser.id);
 
-    // 'starší', 'ostatní', and 'superadmin' can call anyone
-    if (['starší', 'ostatní', 'superadmin'].includes(currentUser.role)) {
+    // 'starsi', 'ostatni', and 'superadmin' can call anyone
+    if (['starsi', 'ostatni', 'superadmin'].includes(currentUser.role)) {
         return allOtherUsers;
     }
 
-    // 'mladší' can only call approved contacts
+    // 'mladsi' can only call approved contacts
     const approvedContactIds = currentUser.approvals?.contacts || [];
     return allOtherUsers.filter(u => approvedContactIds.includes(u.id));
     
