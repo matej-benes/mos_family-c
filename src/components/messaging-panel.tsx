@@ -35,8 +35,6 @@ export function MessagingPanel() {
   const [approverPin, setApproverPin] = useState('');
   const [isApproving, setIsApproving] = useState(false);
 
-  const approvedContactIds = useMemo(() => currentUser?.approvals?.contacts || [], [currentUser]);
-  
   const olderSiblings = useMemo(() => users.filter(u => u.role === 'starší'), [users]);
   
   const contacts = useMemo(() => {
@@ -110,8 +108,8 @@ export function MessagingPanel() {
       return;
     }
 
-    // RULE 3 (Default): For all others ('mladší' and 'ostatní' talking to non-'mladší'), check for approval.
-    const isContactApproved = approvedContactIds.includes(user.id);
+    // RULE 3 (Default): For all others, check for approval directly from the currentUser object.
+    const isContactApproved = (currentUser.approvals?.contacts || []).includes(user.id);
     if (isContactApproved) {
       setChattingWith(user);
     } else {
@@ -274,8 +272,7 @@ export function MessagingPanel() {
                       }
                       
                       // Logic for everyone else.
-                      // 'starší' always can, others need approval.
-                      const canStartConversation = currentUser.role === 'starší' || approvedContactIds.includes(user.id);
+                      const canStartConversation = currentUser.role === 'starší' || (currentUser.approvals?.contacts || []).includes(user.id);
                       
                       return (
                       <button key={user.id} onClick={() => handleContactClick(user)} className="flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-accent transition-colors">
