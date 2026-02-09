@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, Shield, MessageCircle, Gamepad2 } from 'lucide-react';
+import { Phone, Shield, MessageCircle, Gamepad2, Users } from 'lucide-react';
 import { AppIcon, type AppIconProps } from './app-icon';
 import { useMikyos } from '@/hooks/use-mikyos';
 
