@@ -118,7 +118,7 @@ export function AdminPanel() {
     }
   };
 
-  const youngerUsers = users.filter(u => u.role === 'mladší');
+  const youngerUsers = users.filter(u => ['mladší', 'ostatní'].includes(u.role));
   const allPossibleContacts = users.filter(u => u.role !== 'superadmin');
 
 
@@ -203,7 +203,7 @@ export function AdminPanel() {
                                                 />
                                             </div>
                                         </div>
-                                        {user.role === 'mladší' && (
+                                        {['mladší', 'ostatní'].includes(user.role) && (
                                             <div className="space-y-3 pt-3 border-t">
                                                  <Label htmlFor={`lock-msg-${user.id}`} className="font-semibold">Manuální uzamčení</Label>
                                                 {user.isManuallyLocked ? (
@@ -242,7 +242,7 @@ export function AdminPanel() {
                 <Card className="h-full flex flex-col">
                     <CardHeader>
                         <CardTitle>Schvalování aplikací a kontaktů</CardTitle>
-                        <CardDescription>Spravujte, které aplikace a kontakty mohou 'mladší' uživatelé používat.</CardDescription>
+                        <CardDescription>Spravujte, které aplikace a kontakty mohou 'mladší' a 'ostatní' uživatelé používat.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 min-h-0">
                       <ScrollArea className="h-full -mr-6 pr-6">
@@ -346,7 +346,7 @@ export function AdminPanel() {
                           )})}
                            {youngerUsers.length === 0 && (
                               <p className="text-muted-foreground text-center py-4">
-                                  Nejsou zde žádní uživatelé s rolí 'mladší'.
+                                  Nejsou zde žádní uživatelé s rolí 'mladší' nebo 'ostatní'.
                               </p>
                            )}
                         </Accordion>

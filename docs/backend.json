@@ -12,7 +12,7 @@
         },
         "role": {
           "type": "string",
-          "description": "The role of the user (e.g., 'superadmin', 'starší', 'mladší')."
+          "description": "The role of the user (e.g., 'superadmin', 'starší', 'mladší', 'ostatní')."
         },
         "deviceIds": {
           "type": "array",
