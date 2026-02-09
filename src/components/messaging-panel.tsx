@@ -34,14 +34,13 @@ export function MessagingPanel() {
   const [isApproving, setIsApproving] = useState(false);
 
   const approvedContactIds = useMemo(() => currentUser?.approvals?.contacts || [], [currentUser]);
-  const canMessageAll = useMemo(() => currentUser && ['starší', 'superadmin'].includes(currentUser.role), [currentUser]);
+  
+  const olderSiblings = useMemo(() => users.filter(u => u.role === 'starší'), [users]);
   
   const contacts = useMemo(() => {
     if (!currentUser) return [];
     return users.filter(u => u.id !== currentUser.id && u.role !== 'superadmin');
   }, [currentUser, users]);
-
-  const olderSiblings = useMemo(() => users.filter(u => u.role === 'starší'), [users]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -91,7 +90,10 @@ export function MessagingPanel() {
   };
 
   const handleContactClick = (user: User) => {
-    if (canMessageAll || approvedContactIds.includes(user.id)) {
+    const canMessageWithoutApproval = currentUser && currentUser.role === 'starší';
+    const isContactApproved = approvedContactIds.includes(user.id);
+    
+    if (canMessageWithoutApproval || isContactApproved) {
       setChattingWith(user);
     } else {
       setRequestingApprovalFor(user);
@@ -233,15 +235,17 @@ export function MessagingPanel() {
           <ScrollArea className="h-full -mr-6 pr-6">
               <div className="space-y-2">
                    {contacts.map(user => {
-                      const isApproved = canMessageAll || approvedContactIds.includes(user.id);
+                      const canMessageWithoutApproval = currentUser && currentUser.role === 'starší';
+                      const isContactApproved = approvedContactIds.includes(user.id);
+                      const canStartConversation = canMessageWithoutApproval || isContactApproved;
                       return (
                       <button key={user.id} onClick={() => handleContactClick(user)} className="flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-accent transition-colors">
                            <Avatar><AvatarImage src={user.avatarUrl} /><AvatarFallback>{user.name.charAt(0)}</AvatarFallback></Avatar>
                           <div className="flex-1">
                               <p className="font-semibold">{user.name}</p>
-                              <p className={cn("text-sm", isApproved ? "text-muted-foreground" : "text-blue-500 font-medium")}>{isApproved ? 'Zahájit konverzaci' : 'Požádat o schválení'}</p>
+                              <p className={cn("text-sm", canStartConversation ? "text-muted-foreground" : "text-blue-500 font-medium")}>{canStartConversation ? 'Zahájit konverzaci' : 'Požádat o schválení'}</p>
                           </div>
-                          {isApproved ? <MessageSquare className="h-5 w-5 text-muted-foreground" /> : <Lock className="h-5 w-5 text-blue-500" />}
+                          {canStartConversation ? <MessageSquare className="h-5 w-5 text-muted-foreground" /> : <Lock className="h-5 w-5 text-blue-500" />}
                       </button>
                    )})}
                    {contacts.length === 0 && <p className="text-muted-foreground text-center py-8">Nejsou zde žádní další uživatelé.</p>}
