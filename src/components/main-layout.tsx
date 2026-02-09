@@ -8,6 +8,7 @@ import { AdminPanel } from '@/components/admin-panel';
 import { CallingPanel } from './calling-panel';
 import { CallModal } from './call-modal';
 import { MessagingPanel } from './messaging-panel';
+import { CalendarPanel } from './calendar-panel';
 
 export function MainLayout() {
   const { isLocked, lockMessage, activeApp, currentUser, incomingCall, activeCall, wallpaperUrl } = useMikyos();
@@ -28,6 +29,8 @@ export function MainLayout() {
         return <MessagingPanel />;
       case 'calling':
         return <CallingPanel />;
+      case 'calendar':
+        return <CalendarPanel />;
       default:
         return <HomeScreen />;
     }

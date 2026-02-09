@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, Shield, MessageCircle, Gamepad2, SlidersHorizontal } from 'lucide-react';
+import { Phone, Shield, MessageCircle, Gamepad2, Calendar } from 'lucide-react';
 import { AppIcon, type AppIconProps } from './app-icon';
 import { useMikyos } from '@/hooks/use-mikyos';
 
@@ -21,6 +21,13 @@ export function HomeScreen() {
       icon: <MessageCircle className="h-8 w-8" />,
       onClick: () => setActiveApp('messaging'),
       color: 'bg-blue-500/20 text-blue-500',
+    },
+    {
+      id: 'calendar',
+      label: 'Kalendář',
+      icon: <Calendar className="h-8 w-8" />,
+      onClick: () => setActiveApp('calendar'),
+      color: 'bg-purple-500/20 text-purple-500',
     },
     {
       id: 'admin',

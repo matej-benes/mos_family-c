@@ -26,7 +26,7 @@ export type Device = {
 
 export type GameState = "hraje_se" | "nehraje_se";
 
-export type ActiveApp = null | "admin" | "calling" | "messaging";
+export type ActiveApp = null | "admin" | "calling" | "messaging" | "calendar";
 
 export type CallStatus = 'pending' | 'answered' | 'declined' | 'ended' | 'none';
 
