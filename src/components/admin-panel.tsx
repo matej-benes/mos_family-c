@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Gamepad2, Users, Moon, ShieldCheck, PlusCircle, X, Wallpaper, Lock, Unlock } from 'lucide-react';
+import { Gamepad2, Users, Moon, ShieldCheck, PlusCircle, X, Wallpaper, Lock, Unlock, Smartphone } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from './ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
@@ -15,14 +15,17 @@ import { useState, useEffect } from 'react';
 import { Badge } from './ui/badge';
 import type { User } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 
 export function AdminPanel() {
-  const { currentUser, users, gameState, toggleGameMode, setBedtime, updateUserApprovals, wallpaperUrl, setWallpaper, setManualLock, clearManualLock } = useMikyos();
+  const { currentUser, users, gameState, toggleGameMode, setBedtime, updateUserApprovals, wallpaperUrl, setWallpaper, setManualLock, clearManualLock, updateUserDeviceIds } = useMikyos();
   const [newApprovalItems, setNewApprovalItems] = useState<{[key: string]: string}>({});
   const [selectedContacts, setSelectedContacts] = useState<{[key: string]: string}>({});
   const [wallpaperInput, setWallpaperInput] = useState('');
   const [manualLockMessages, setManualLockMessages] = useState<{[key: string]: string}>({});
+  const [newDeviceInputs, setNewDeviceInputs] = useState<{[key: string]: string}>({});
+
 
   useEffect(() => {
     if (wallpaperUrl) {
@@ -33,7 +36,6 @@ export function AdminPanel() {
   }, [wallpaperUrl]);
   
   useEffect(() => {
-    // Pre-fill lock messages from user data
     const initialLockMessages: {[key: string]: string} = {};
     users.forEach(user => {
       if (user.isManuallyLocked && user.manualLockMessage) {
@@ -80,8 +82,8 @@ export function AdminPanel() {
         ...currentApprovals,
         apps: [...(currentApprovals.apps || []), newItem],
       };
-      handleNewItemChange(key, ''); // Clear input
-    } else { // contacts
+      handleNewItemChange(key, '');
+    } else { 
       const contactIdToAdd = selectedContacts[user.id];
       if (!contactIdToAdd || (currentApprovals.contacts || []).includes(contactIdToAdd)) return;
 
@@ -89,7 +91,7 @@ export function AdminPanel() {
         ...currentApprovals,
         contacts: [...(currentApprovals.contacts || []), contactIdToAdd],
       };
-      handleContactSelectChange(user.id, ''); // Clear selection
+      handleContactSelectChange(user.id, '');
     }
   
     updateUserApprovals(user.id, newApprovals);
@@ -117,6 +119,28 @@ export function AdminPanel() {
       setManualLock(userId, message);
     }
   };
+
+  const handleNewDeviceInputChange = (userId: string, value: string) => {
+    setNewDeviceInputs(prev => ({ ...prev, [userId]: value }));
+  };
+
+  const handleAddDeviceId = (user: User) => {
+    const newId = newDeviceInputs[user.id]?.trim();
+    if (!newId) return;
+
+    const currentDeviceIds = user.deviceIds || [];
+    if (currentDeviceIds.includes(newId)) return;
+
+    const updatedDeviceIds = [...currentDeviceIds, newId];
+    updateUserDeviceIds(user.id, updatedDeviceIds);
+    handleNewDeviceInputChange(user.id, '');
+  };
+
+  const handleRemoveDeviceId = (user: User, deviceIdToRemove: string) => {
+    const updatedDeviceIds = (user.deviceIds || []).filter(id => id !== deviceIdToRemove);
+    updateUserDeviceIds(user.id, updatedDeviceIds);
+  };
+
 
   const youngerUsers = users.filter(u => ['mladší', 'ostatní'].includes(u.role));
   const allPossibleContacts = users.filter(u => u.role !== 'superadmin');
@@ -230,6 +254,44 @@ export function AdminPanel() {
                                                 )}
                                             </div>
                                         )}
+                                        <div className="space-y-3 pt-3 border-t">
+                                            <Label htmlFor={`device-id-${user.id}`} className="font-semibold flex items-center gap-2"><Smartphone />Spravovaná zařízení</Label>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    id={`device-id-${user.id}`}
+                                                    placeholder="Vložte ID zařízení"
+                                                    value={newDeviceInputs[user.id] || ''}
+                                                    onChange={(e) => handleNewDeviceInputChange(user.id, e.target.value)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleAddDeviceId(user)}
+                                                />
+                                                <Button onClick={() => handleAddDeviceId(user)} disabled={!newDeviceInputs[user.id]}>
+                                                    <PlusCircle className="mr-2 h-4 w-4" />Přidat
+                                                </Button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {(user.deviceIds || []).length > 0 ? (
+                                                    <TooltipProvider>
+                                                    {(user.deviceIds || []).map(id => (
+                                                        <Tooltip key={id}>
+                                                            <TooltipTrigger>
+                                                                <Badge variant="secondary" className="text-sm py-1 pl-3 pr-2 font-mono">
+                                                                    {id.substring(0, 8)}...
+                                                                    <button onClick={() => handleRemoveDeviceId(user, id)} className="ml-2 rounded-full hover:bg-destructive/20 p-0.5">
+                                                                        <X className="h-3 w-3" />
+                                                                    </button>
+                                                                </Badge>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p className="font-mono">{id}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    ))}
+                                                    </TooltipProvider>
+                                                ) : (
+                                                    <p className="text-sm text-muted-foreground">Žádná přiřazená zařízení.</p>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                                 </div>

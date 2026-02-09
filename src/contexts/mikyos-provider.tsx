@@ -33,6 +33,7 @@ interface MikyosContextType {
   toggleGameMode: () => void;
   setBedtime: (userId: string, time: string) => void;
   updateUserApprovals: (userId: string, approvals: { apps: string[]; contacts: string[] }, toastOptions?: { title: string; description: string } | null) => void;
+  updateUserDeviceIds: (userId: string, deviceIds: string[]) => void;
   setManualLock: (userId: string, message: string) => void;
   clearManualLock: (userId: string) => void;
   approveContactInPerson: (requesterId: string, targetContactId: string, approverId: string, approverPin: string) => Promise<boolean>;
@@ -408,6 +409,14 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     toast(toastOptions || { title: "Schválení aktualizováno", description: "Seznam schválených položek byl upraven." });
   };
 
+  const updateUserDeviceIds = (userId: string, deviceIds: string[]) => {
+    if (!firestore) return;
+    const userDocRef = doc(firestore, 'users', userId);
+    updateDocumentNonBlocking(userDocRef, { deviceIds });
+    toast({ title: "Zařízení aktualizována", description: "Seznam zařízení uživatele byl upraven." });
+  };
+
+
   const approveContactInPerson = async (requesterId: string, targetContactId: string, approverId: string, approverPin: string): Promise<boolean> => {
     const approver = users.find(u => u.id === approverId);
     if (!approver || approver.role !== 'starší' || approver.pin !== approverPin) {
@@ -496,6 +505,7 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     toggleGameMode,
     setBedtime,
     updateUserApprovals,
+    updateUserDeviceIds,
     startCall,
     answerCall,
     hangUp,
