@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -110,7 +111,7 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
                                 <div key={contact.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/50">
                                     <div className="flex items-center gap-3">
                                         <Avatar className="h-8 w-8">
-                                            <AvatarImage src={contact.avatarUrl} />
+                                            <AvatarImage src={contact.avatarUrl || `https://picsum.photos/seed/${contact.id}/100/100`} />
                                             <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
                                         </Avatar>
                                         <span className="font-medium text-sm">{contact.name}</span>
@@ -145,7 +146,7 @@ export function LockScreen({ message, isLoginScreen = false }: LockScreenProps) 
           <>
             <CardHeader className="text-center">
               <Avatar className="w-24 h-24 mx-auto mb-4">
-                <AvatarImage src={deviceUser.avatarUrl} data-ai-hint={deviceUser.dataAiHint} />
+                <AvatarImage src={deviceUser.avatarUrl || `https://picsum.photos/seed/${deviceUser.id}/100/100`} data-ai-hint={deviceUser.dataAiHint} />
                 <AvatarFallback>{deviceUser.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <CardTitle className="font-headline text-2xl">

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMikyos } from '@/hooks/use-mikyos';
@@ -208,7 +209,7 @@ export function AdminPanel() {
                                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                             <div className="flex items-center gap-4">
                                                 <Avatar>
-                                                <AvatarImage src={user.avatarUrl} data-ai-hint={user.dataAiHint} />
+                                                <AvatarImage src={user.avatarUrl || `https://picsum.photos/seed/${user.id}/100/100`} data-ai-hint={user.dataAiHint} />
                                                 <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                                                 </Avatar>
                                                 <div>
@@ -318,7 +319,7 @@ export function AdminPanel() {
                               <AccordionTrigger>
                                 <div className="flex items-center gap-2">
                                   <Avatar className="h-8 w-8">
-                                    <AvatarImage src={user.avatarUrl} />
+                                    <AvatarImage src={user.avatarUrl || `https://picsum.photos/seed/${user.id}/100/100`} />
                                     <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                                   </Avatar>
                                   <span>{user.name}</span>
@@ -366,7 +367,7 @@ export function AdminPanel() {
                                                 <SelectItem key={contact.id} value={contact.id}>
                                                     <div className="flex items-center gap-2">
                                                         <Avatar className="h-6 w-6">
-                                                            <AvatarImage src={contact.avatarUrl} />
+                                                            <AvatarImage src={contact.avatarUrl || `https://picsum.photos/seed/${contact.id}/100/100`} />
                                                             <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
                                                         </Avatar>
                                                         <span>{contact.name}</span>
@@ -387,7 +388,7 @@ export function AdminPanel() {
                                         return (
                                           <Badge key={contact.id} variant="secondary" className="text-sm py-1 pl-2 pr-2 h-8 flex items-center">
                                               <Avatar className="h-6 w-6 mr-2">
-                                                  <AvatarImage src={contact.avatarUrl} />
+                                                  <AvatarImage src={contact.avatarUrl || `https://picsum.photos/seed/${contact.id}/100/100`} />
                                                   <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
                                               </Avatar>
                                               <span>{contact.name}</span>

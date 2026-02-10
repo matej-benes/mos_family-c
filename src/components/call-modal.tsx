@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
@@ -84,6 +85,7 @@ export function CallModal() {
   const displayName = isOutgoing ? callee?.name : call.callerName;
   const displayAvatar = isOutgoing ? callee?.avatarUrl : caller?.avatarUrl;
   const displayFallback = (displayName || '?').charAt(0);
+  const avatarSeedId = isOutgoing ? call.calleeId : call.callerId;
   
   const title = isIncoming 
     ? `Příchozí hovor od ${call.callerName}` 
@@ -123,7 +125,7 @@ export function CallModal() {
             { (isIncoming || isOutgoing) && (
                  <div className="flex flex-col items-center gap-4 animate-pulse">
                     <Avatar className="w-24 h-24">
-                        <AvatarImage src={displayAvatar} />
+                        <AvatarImage src={displayAvatar || `https://picsum.photos/seed/${avatarSeedId}/100/100`} />
                         <AvatarFallback className="text-4xl">{displayFallback}</AvatarFallback>
                     </Avatar>
                     <p className="text-xl font-bold">{displayName}</p>

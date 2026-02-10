@@ -363,17 +363,22 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
     const currentHours = now.getHours();
     const currentMinutes = now.getMinutes();
     
-    if (currentUser.bedtime) {
-      const [bedtimeHours, bedtimeMinutes] = currentUser.bedtime.split(':').map(Number);
-      
-      // Simple bedtime check: locks from bedtime until 6 AM.
-      if (
-        (currentHours > bedtimeHours || (currentHours === bedtimeHours && currentMinutes >= bedtimeMinutes)) 
-        || currentHours < 6
-      ) {
-        setIsLocked(true);
-        setLockMessage('Je po tvé večerce! Systém je zamčený až do rána.');
-        return;
+    if (currentUser.bedtime && currentUser.bedtime.includes(':')) {
+      const timeParts = currentUser.bedtime.split(':');
+      if (timeParts.length === 2) {
+        const [bedtimeHours, bedtimeMinutes] = timeParts.map(Number);
+
+        if (!isNaN(bedtimeHours) && !isNaN(bedtimeMinutes)) {
+          // Simple bedtime check: locks from bedtime until 6 AM.
+          if (
+            (currentHours > bedtimeHours || (currentHours === bedtimeHours && currentMinutes >= bedtimeMinutes)) ||
+            currentHours < 6
+          ) {
+            setIsLocked(true);
+            setLockMessage('Je po tvé večerce! Systém je zamčený až do rána.');
+            return;
+          }
+        }
       }
     }
 

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from 'react';
@@ -49,7 +50,7 @@ export function CallingPanel() {
                     <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-4">
                         <Avatar>
-                          <AvatarImage src={user.avatarUrl} data-ai-hint={user.dataAiHint} />
+                          <AvatarImage src={user.avatarUrl || `https://picsum.photos/seed/${user.id}/100/100`} data-ai-hint={user.dataAiHint} />
                           <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
@@ -82,7 +83,7 @@ export function CallingPanel() {
                       <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex items-center gap-4">
                           <Avatar>
-                            <AvatarImage src={user.avatarUrl} data-ai-hint={user.dataAiHint} />
+                            <AvatarImage src={user.avatarUrl || `https://picsum.photos/seed/${user.id}/100/100`} data-ai-hint={user.dataAiHint} />
                             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
@@ -109,7 +110,7 @@ export function CallingPanel() {
                       <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg opacity-60">
                         <div className="flex items-center gap-4">
                           <Avatar>
-                            <AvatarImage src={user.avatarUrl} data-ai-hint={user.dataAiHint} />
+                            <AvatarImage src={user.avatarUrl || `https://picsum.photos/seed/${user.id}/100/100`} data-ai-hint={user.dataAiHint} />
                             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>

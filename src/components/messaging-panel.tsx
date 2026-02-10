@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -162,7 +163,7 @@ export function MessagingPanel() {
                     {olderSiblings.length > 0 ? olderSiblings.map(sibling => (
                       <SelectItem key={sibling.id} value={sibling.id}>
                         <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6"><AvatarImage src={sibling.avatarUrl} /><AvatarFallback>{sibling.name.charAt(0)}</AvatarFallback></Avatar>
+                          <Avatar className="h-6 w-6"><AvatarImage src={sibling.avatarUrl || `https://picsum.photos/seed/${sibling.id}/100/100`} /><AvatarFallback>{sibling.name.charAt(0)}</AvatarFallback></Avatar>
                           <span>{sibling.name}</span>
                         </div>
                       </SelectItem>
@@ -211,7 +212,7 @@ export function MessagingPanel() {
            <Button variant="ghost" size="icon" onClick={() => setChattingWith(null)}>
               <ArrowLeft />
            </Button>
-           <Avatar><AvatarImage src={chattingWith.avatarUrl} /><AvatarFallback>{chattingWith.name.charAt(0)}</AvatarFallback></Avatar>
+           <Avatar><AvatarImage src={chattingWith.avatarUrl || `https://picsum.photos/seed/${chattingWith.id}/100/100`} /><AvatarFallback>{chattingWith.name.charAt(0)}</AvatarFallback></Avatar>
           <CardTitle className="p-0 text-xl">{chattingWith.name}</CardTitle>
         </CardHeader>
         <CardContent className="flex-1 p-0 flex flex-col min-h-0">
@@ -219,7 +220,7 @@ export function MessagingPanel() {
               <div className="space-y-4">
                   {messages.map(msg => (
                       <div key={msg.id} className={cn("flex items-end gap-2", msg.senderId === currentUser.id ? "justify-end" : "justify-start")}>
-                          {msg.senderId !== currentUser.id && <Avatar className="h-8 w-8"><AvatarImage src={chattingWith.avatarUrl} /><AvatarFallback>{chattingWith.name.charAt(0)}</AvatarFallback></Avatar>}
+                          {msg.senderId !== currentUser.id && <Avatar className="h-8 w-8"><AvatarImage src={chattingWith.avatarUrl || `https://picsum.photos/seed/${chattingWith.id}/100/100`} /><AvatarFallback>{chattingWith.name.charAt(0)}</AvatarFallback></Avatar>}
                           <div className={cn("max-w-xs md:max-w-md lg:max-w-lg rounded-2xl px-4 py-2", msg.senderId === currentUser.id ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-secondary rounded-bl-none')}>
                               <p className="text-base break-words">{msg.text}</p>
                               <p className="text-xs opacity-70 mt-1 text-right">{msg.timestamp ? formatDistanceToNow(new Date(msg.timestamp.seconds * 1000), { addSuffix: true, locale: cs }) : 'Odesílání...'}</p>
@@ -269,7 +270,7 @@ export function MessagingPanel() {
                     className="flex items-center gap-4 p-3 w-full text-left rounded-lg hover:bg-accent transition-colors border border-transparent"
                   >
                     <Avatar>
-                      <AvatarImage src={user.avatarUrl} />
+                      <AvatarImage src={user.avatarUrl || `https://picsum.photos/seed/${user.id}/100/100`} />
                       <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
@@ -296,7 +297,7 @@ export function MessagingPanel() {
                       className="flex items-center gap-4 p-3 w-full text-left rounded-lg border border-dashed border-blue-200 bg-blue-50/30 hover:bg-blue-50 transition-colors"
                     >
                       <Avatar>
-                        <AvatarImage src={user.avatarUrl} />
+                        <AvatarImage src={user.avatarUrl || `https://picsum.photos/seed/${user.id}/100/100`} />
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
