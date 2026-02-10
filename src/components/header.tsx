@@ -49,7 +49,7 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Image
-                  src={currentUser.avatarUrl}
+                  src={currentUser.avatarUrl || `https://picsum.photos/seed/${currentUser.id}/40/40`}
                   alt={currentUser.name}
                   width={40}
                   height={40}

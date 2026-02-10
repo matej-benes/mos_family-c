@@ -7,8 +7,8 @@ export type User = {
   role: UserRole;
   deviceIds?: string[];
   bedtime?: string; // HH:mm format
-  avatarUrl: string;
-  dataAiHint: string;
+  avatarUrl?: string;
+  dataAiHint?: string;
   approvals?: {
     apps: string[];
     contacts: string[];
