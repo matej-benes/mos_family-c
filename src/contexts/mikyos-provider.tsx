@@ -83,18 +83,19 @@ export function MikyosProvider({ children }: { children: ReactNode }) {
   const settingsDoc = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'global') : null, [firestore]);
   const { data: settingsData } = useDoc<Settings>(settingsDoc);
 
-  const eventsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'events'), firestoreOrderBy('date', 'asc'), firestoreOrderBy('startTime', 'asc')) : null, [firestore]);
-  const { data: eventsData } = useCollection<Event>(eventsQuery);
-
   const users = useMemo(() => usersData || [], [usersData]);
   const gameState = useMemo(() => gameStateData?.mode || 'nehraje_se', [gameStateData]);
   const wallpaperUrl = useMemo(() => settingsData?.wallpaperUrl, [settingsData]);
-  const events = useMemo(() => eventsData || [], [eventsData]);
-
+  
   const currentUser = useMemo(() => {
     if (!currentUserId || users.length === 0) return null;
     return users.find(u => u.id === currentUserId) || null;
   }, [currentUserId, users]);
+
+  // Fetch events only when a user is logged in to prevent permission errors on app load.
+  const eventsQuery = useMemoFirebase(() => (firestore && currentUser) ? query(collection(firestore, 'events'), firestoreOrderBy('date', 'asc'), firestoreOrderBy('startTime', 'asc')) : null, [firestore, currentUser]);
+  const { data: eventsData } = useCollection<Event>(eventsQuery);
+  const events = useMemo(() => eventsData || [], [eventsData]);
 
 
   useEffect(() => {
